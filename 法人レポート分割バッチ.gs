@@ -1,4 +1,5 @@
 /**
+ * @system enスケジューラ
  * @fileoverview 法人ごとに履歴を分割してスプレッドシートに出力し、Slack API経由で結果を通知する
  * @version 4.2
  * @author (あなたの名前)

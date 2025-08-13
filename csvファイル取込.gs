@@ -1,4 +1,5 @@
 /**
+ * @system enスケジューラ
  * @fileoverview 指定されたフォルダのCSVファイルをスプレッドシートにインポートし、Slack API経由で結果を通知する
  * @version 4.0
  * @author (あなたの名前)
