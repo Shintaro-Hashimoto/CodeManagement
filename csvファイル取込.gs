@@ -1,7 +1,7 @@
 /**
  * @fileoverview 指定されたフォルダのCSVファイルをスプレッドシートにインポートし、Slack API経由で結果を通知する
  * @version 4.0
- * @author Hashimoto
+ * @author (あなたの名前)
  * @date 2025-08-13
  * @description Slack通知をWebhookからAPI (chat.postMessage) 方式に変更
  */
