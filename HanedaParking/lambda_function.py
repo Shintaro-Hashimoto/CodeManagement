@@ -1,88 +1,109 @@
-import json
-import urllib.parse
+import base64
 import boto3
-import io
+import google.auth
+import google.auth.transport.requests
+import json
 import os
 import re
-from PIL import Image
+import urllib.parse
+from google.cloud import aiplatform
 
-# (クライアント初期化などは変更なし)
-s3_client = boto3.client('s3')
-rekognition_client = boto3.client('rekognition')
-sns_client = boto3.client('sns')
+# --- 設定値 ---
+# 環境変数から設定値を取得
 SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN')
 TARGET_DATES_STR = os.environ.get('TARGET_DATES', '')
+# GCPプロジェクトIDとロケーションを設定（例: 'asia-northeast1' (東京)）
+GCP_PROJECT_ID = "【GCPプロジェクトIDをここに入力】"
+GCP_LOCATION = "asia-northeast1"
+# 使用するGeminiのモデル名
+MODEL_NAME = "gemini-1.5-flash-001"
+# ----------------
 
-P2_REGION = {'x_min': 0.05, 'x_max': 0.50, 'y_min': 0.40, 'y_max': 0.80}
-P3_REGION = {'x_min': 0.50, 'x_max': 0.95, 'y_min': 0.40, 'y_max': 0.80}
+# AWSクライアントを初期化
+s3_client = boto3.client('s3')
+sns_client = boto3.client('sns')
+secrets_client = boto3.client('secretsmanager')
 
-def is_green_or_white(r, g, b):
-    is_green = g > r * 1.1 and g > b * 1.1 and g > 60
-    is_white = r > 200 and g > 200 and b > 200
-    return is_green or is_white
+# --- GCP認証情報の読み込み ---
+# Secrets ManagerからGCPの認証情報を取得
+print("Fetching GCP credentials from AWS Secrets Manager...")
+gcp_credentials_secret = secrets_client.get_secret_value(SecretId="gcp/gemini-credentials")
+gcp_credentials_json = json.loads(gcp_credentials_secret['SecretString'])
+credentials, project_id = google.auth.load_credentials_from_dict(gcp_credentials_json)
+print("Successfully loaded GCP credentials.")
 
-def find_available_dates(bucket, key, target_region):
-    available_dates = set()
-    print(f"Analyzing text in image: s3://{bucket}/{key}")
-    response_text = rekognition_client.detect_text(Image={'S3Object': {'Bucket': bucket, 'Name': key}})
+# Vertex AIクライアントを初期化
+aiplatform.init(project=GCP_PROJECT_ID, location=GCP_LOCATION, credentials=credentials)
+model = aiplatform.gapic.ModelServiceClient(client_options={"api_endpoint": f"{GCP_LOCATION}-aiplatform.googleapis.com"})
+
+def analyze_image_with_gemini(image_bytes, lot_name):
+    """Gemini APIを呼び出して画像から空き日を分析する"""
+    print(f"Analyzing image for {lot_name} with Gemini model {MODEL_NAME}...")
+
+    # Geminiに渡す指示（プロンプト）
+    prompt = f"""
+    これは羽田空港駐車場の予約カレンダーのスクリーンショットです。
+    画像の中から「{lot_name}」と書かれたカレンダーのみを注意深く分析してください。
+    背景が緑色または白色になっている日付は「空きあり」です。
+    「空きあり」と判断した日付の数字を、JSON形式の数値リストとして返してください。
+    例: [11, 12, 24, 25]
+    もし空きが一つも見つからなければ、空のリスト [] を返してください。
+    赤色や灰色の日は無視してください。
+    """
     
-    date_texts = {}
-    for text in response_text['TextDetections']:
-        if text['Type'] == 'WORD' and text['DetectedText'].isdigit() and 1 <= int(text['DetectedText']) <= 31:
-            date_texts[text['DetectedText']] = text['Geometry']['BoundingBox']
+    # 画像データをエンコード
+    encoded_content = base64.b64encode(image_bytes).decode("utf-8")
     
-    if not date_texts: 
-        print("No date-like text found.")
-        return []
+    # Gemini APIへのリクエストを作成
+    instance = {
+        "contents": [
+            {"role": "user", "parts": [
+                {"text": prompt},
+                {"inline_data": {"mime_type": "image/png", "data": encoded_content}}
+            ]}
+        ]
+    }
+    
+    # APIを呼び出し
+    response = model.predict(endpoint=f"projects/{GCP_PROJECT_ID}/locations/{GCP_LOCATION}/publishers/google/models/{MODEL_NAME}", instances=[instance])
+    
+    # レスポンスから結果を抽出
+    gemini_response_text = response.predictions[0]['content']
+    print(f"Gemini raw response: {gemini_response_text}")
 
-    print(f"Rekognition detected {len(date_texts)} numbers. Filtering by target region...")
-    s3_object = s3_client.get_object(Bucket=bucket, Key=key)
-    image = Image.open(io.BytesIO(s3_object['Body'].read())).convert("RGB")
-    img_width, img_height = image.size
-
-    for date, box in date_texts.items():
-        center_x = box['Left'] + (box['Width'] / 2)
-        center_y = box['Top'] + (box['Height'] / 2)
-        
-        # ★★★ ここからが診断用のログ ★★★
-        region_check_passed = (target_region['x_min'] < center_x < target_region['x_max'] and 
-                               target_region['y_min'] < center_y < target_region['y_max'])
-        
-        print(f"--- Checking date '{date}'. Center coords: (x:{center_x:.3f}, y:{center_y:.3f}). In region? {region_check_passed}")
-        # ★★★ ここまでが診断用のログ ★★★
-        
-        if not region_check_passed:
-            continue
-            
-        px, py = int(center_x * img_width), int(center_y * img_height)
-        is_available = False
-        offsets = [(0, 0), (0, -2), (0, 2), (-2, 0), (2, 0)]
-        for dx, dy in offsets:
-            check_x, check_y = px + dx, py + dy
-            if 0 <= check_x < img_width and 0 <= check_y < img_height:
-                r, g, b = image.getpixel((check_x, check_y))
-                if is_green_or_white(r, g, b):
-                    is_available = True
-                    break
-        if is_available:
-            available_dates.add(int(date))
-
-    return sorted(list(available_dates))
+    # JSON部分だけを抽出してパースする
+    json_match = re.search(r'\[(.*?)\]', gemini_response_text, re.DOTALL)
+    if json_match:
+        try:
+            available_dates = json.loads(json_match.group(0))
+            return sorted([int(d) for d in available_dates])
+        except json.JSONDecodeError:
+            print("Error: Gemini response was not valid JSON.")
+            return []
+    
+    return []
 
 def lambda_handler(event, context):
-    # (このlambda_handler関数の中身はver2.3から変更ありません)
     try:
-        bucket, key = event['Records'][0]['s3']['bucket']['name'], urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
-        filename = os.path.basename(key)
-        if not filename.lower().startswith('analysis-image-'): return
+        bucket = event['Records'][0]['s3']['bucket']['name']
+        key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
         
-        lot, target_region = ("P3", P3_REGION)
-        if "p2" in key: lot, target_region = ("P2", P2_REGION)
-        print(f"Targeting LOT: {lot}")
+        filename = os.path.basename(key)
+        if not filename.lower().startswith('analysis-image-'):
+            return
+            
+        lot = "P3"
+        if "p2" in filename: lot = "P2"
 
-        all_available_dates = find_available_dates(bucket, key, target_region)
-        print(f"All available dates found in {lot} region: {all_available_dates}")
+        print(f"Processing image for {lot}: s3://{bucket}/{key}")
+        s3_object = s3_client.get_object(Bucket=bucket, Key=key)
+        image_bytes = s3_object['Body'].read()
 
+        # Geminiで画像分析を実行
+        all_available_dates = analyze_image_with_gemini(image_bytes, lot)
+        print(f"Gemini analysis found available dates: {all_available_dates}")
+
+        # (ここから先の通知ロジックはver2.1とほぼ同じ)
         subject, message, dates_to_notify = "", "", []
         message_intro, message_link_text = "", ""
         
@@ -90,11 +111,11 @@ def lambda_handler(event, context):
             target_dates = {int(d.strip()) for d in TARGET_DATES_STR.split(',') if d.strip()}
             matched_dates = sorted(list(set(all_available_dates) & target_dates))
             if matched_dates:
-                dates_to_notify, subject = matched_dates, f"【ターゲット検知】羽田空港駐車場 {lot}で空き発見！"
+                dates_to_notify, subject = matched_dates, f"【ターゲット検知/Gemini】羽田空港駐車場 {lot}で空き発見！"
                 message_intro, message_link_text = "監視対象の日にちで、駐車場の空きを検知しました！", "▼予約サイト（至急！）"
         else:
             if all_available_dates:
-                dates_to_notify, subject = all_available_dates, f"【空き検知】羽田空港駐車場 {lot}"
+                dates_to_notify, subject = all_available_dates, f"【空き検知/Gemini】羽田空港駐車場 {lot}"
                 message_intro, message_link_text = f"羽田空港 {lot} 駐車場に空きが検知されました。", "▼予約サイト"
 
         if dates_to_notify:
