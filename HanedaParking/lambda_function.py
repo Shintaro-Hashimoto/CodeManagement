@@ -13,7 +13,7 @@ from google.cloud import aiplatform
 SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN')
 TARGET_DATES_STR = os.environ.get('TARGET_DATES', '')
 # GCPプロジェクトIDとロケーションを設定（例: 'asia-northeast1' (東京)）
-GCP_PROJECT_ID = "【GCPプロジェクトIDをここに入力】"
+GCP_PROJECT_ID = "haneda-parking-468805"
 GCP_LOCATION = "asia-northeast1"
 # 使用するGeminiのモデル名
 MODEL_NAME = "gemini-1.5-flash-001"
