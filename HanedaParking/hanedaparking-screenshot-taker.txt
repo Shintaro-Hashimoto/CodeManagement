@@ -1,0 +1,60 @@
+/**
+ * Haneda Parking - Screenshot Taker v2.0
+ * 役割：当月と翌月の両方のスクリーンショットを撮影する。
+ * ファイル名に年月を埋め込むことで、分析官Lambdaに正確な情報を渡す。
+ */
+const synthetics = require('Synthetics');
+const log = require('SyntheticsLogger');
+
+const TOP_URL = 'https://hnd-rsv.aeif.or.jp/airport2/app/toppage';
+const LOT = process.env.LOT || 'P3';
+
+exports.handler = async () => {
+    // 不要な自動スクリーンショットは無効化
+    const syntheticsConfig = synthetics.getConfiguration();
+    syntheticsConfig.setConfig({
+        screenshotOnStepStart: false,
+        screenshotOnStepSuccess: false,
+    });
+
+    const page = await synthetics.getPage();
+    await page.setViewport({ width: 1366, height: 1800 });
+
+    log.info(`Navigating to ${TOP_URL}`);
+    await page.goto(TOP_URL, { waitUntil: 'networkidle0', timeout: 45000 });
+    await new Promise(r => setTimeout(r, 5000)); // 描画安定待ち
+
+    const lotId = LOT.toLowerCase();
+    
+    // --- 1. 当月のスクリーンショットを撮影 ---
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // getMonthは0-11を返すため+1
+    const monthStr = String(month).padStart(2, '0');
+
+    let screenshotPath = `/tmp/analysis-image-${lotId}_${year}-${monthStr}.png`;
+    log.info(`Taking screenshot for current month (${year}-${monthStr})`);
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+
+    // --- 2. 「翌月へ」ボタンをクリック ---
+    log.info('Trying to click "next month" button...');
+    const selector = `#${lotId} .cal-month-next`;
+    try {
+        await page.click(selector);
+        log.info('Successfully clicked "next month" button.');
+        await new Promise(r => setTimeout(r, 3000)); // 翌月の描画を待つ
+    } catch (e) {
+        log.warn('Could not find or click "next month" button. Skipping next month screenshot.');
+        return; // 翌月ボタンがなければここで終了
+    }
+
+    // --- 3. 翌月のスクリーンショットを撮影 ---
+    const nextMonthDate = new Date(now.setMonth(now.getMonth() + 1));
+    const nextYear = nextMonthDate.getFullYear();
+    const nextMonth = nextMonthDate.getMonth() + 1;
+    const nextMonthStr = String(nextMonth).padStart(2, '0');
+
+    screenshotPath = `/tmp/analysis-image-${lotId}_${nextYear}-${nextMonthStr}.png`;
+    log.info(`Taking screenshot for next month (${nextYear}-${nextMonthStr})`);
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+};
