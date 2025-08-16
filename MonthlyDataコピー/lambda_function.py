@@ -1,6 +1,7 @@
 import boto3
 import os
 import json
+import time  # timeモジュールをインポート
 import urllib3
 from datetime import datetime, timezone, timedelta
 from google.oauth2 import service_account
@@ -63,16 +64,21 @@ def lambda_handler(event, context):
 
     file_name = "N/A"
     try:
+        # ★★★★★ 修正点 ★★★★★
+        # ファイル書き込み完了を待つため、10秒間待機する
+        print("ファイル生成を待機します... (10秒)")
+        time.sleep(10)
+        print("待機完了。処理を再開します。")
+        # ★★★★★★★★★★★★★★★
+        
         # --- S3イベント解析 ---
         bucket_name = event['Records'][0]['s3']['bucket']['name']
         s3_key = unquote_plus(event['Records'][0]['s3']['object']['key'])
         
-        # ★★★★★ 回避策 ★★★★★
-        # S3トリガーの代わりにコードでプレフィックスを確認
+        # S3トリガーの問題を回避するため、コード側でプレフィックスを確認
         if not s3_key.startswith('dt='):
             print(f"ファイルパスが 'dt=' で始まらないため、処理をスキップします: {s3_key}")
             return {'statusCode': 200, 'body': 'Skipped file due to prefix mismatch.'}
-        # ★★★★★★★★★★★★★★★
 
         file_name = os.path.basename(s3_key)
         
