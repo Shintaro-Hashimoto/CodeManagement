@@ -54,18 +54,78 @@
       padding: 15px;
       border-radius: 6px;
     }
+
+    /* ▼▼▼ ツールチップ用のCSS（ここから） ▼▼▼ */
+    .info-item {
+      display: flex; /* 日付と本文を横並びに */
+      align-items: flex-start;
+      margin-bottom: 10px;
+      font-size: 14px; /* 文字サイズを微調整 */
+    }
+
+    .info-item .date {
+      color: #666;
+      flex-shrink: 0; /* 幅が縮まないようにする */
+    }
+
+    .info-item .content {
+      position: relative; /* ツールチップの位置の基準点になります */
+      margin-left: 10px;
+      cursor: help; /* マウスカーソルを「？」にする */
+    }
+
+    .info-item .tooltip {
+      visibility: hidden; /* 通常時は非表示 */
+      opacity: 0;         /* 透明にする */
+      
+      /* 吹き出しの見た目 */
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      padding: 8px 12px;
+      border-radius: 6px;
+      white-space: nowrap; /* テキストを改行させない */
+      font-size: 12px;
+      
+      /* 吹き出しの位置 */
+      position: absolute;
+      z-index: 1;
+      bottom: 125%; /* テキストの上側に配置 */
+      left: 50%;
+      transform: translateX(-50%); /* 中央揃えにする */
+
+      /* ふわっと表示するためのアニメーション設定 */
+      transition: opacity 0.3s;
+    }
+
+    /* 吹き出しの「しっぽ（三角形）」部分 */
+    .info-item .tooltip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #555 transparent transparent transparent;
+    }
+
+    /* マウスが乗った時にツールチップを表示 */
+    .info-item .content:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+    /* ▲▲▲ ツールチップ用のCSS（ここまで） ▲▲▲ */
+
   </style>
 </head>
 <body>
 
   <div id="infowrap">
 
-    <!-- メインメッセージ -->
     <div id="msgBox" style="margin-bottom: 40px;">
       <img src="./img/kidsplus.png" alt="KIDS PLUS ロゴ" style="height: 80px; display: block; margin-bottom: 40px;">
       <p>最新のアップデート情報やシステム障害情報はこちらからご確認ください。</p>
-
-      <!-- アップデート・障害ボタン（横並び） -->
       <div style="margin-top: 10px; display: flex; flex-direction: row; gap: 10px; flex-wrap: wrap;">
         <a href="https://kidsplus.my.site.com/support/s/article/system-update?language=ja" target="_blank"
            style="background: #6699cc; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
@@ -76,20 +136,16 @@
           システム障害情報
         </a>
       </div>
-
       <br>
-
       <p><strong>kids+clock（iPadアプリ）をご利用の皆様へ</strong><br>
-         最新版へのアップデートをお願いします。</p>
+        最新版へのアップデートをお願いします。</p>
       <a href="https://kidsplus.my.site.com/support/s/article/work000001085?language=ja" target="_blank"
          style="background: #6699cc; color: #fff; padding: 10px 20px; text-decoration: none; display: inline-block; border-radius: 4px;">
         kids+clock アップデート方法
       </a>
     </div>
 
-    <!-- ロゴ＋リンク＋一言説明（3つ横並び） -->
     <div class="product-links">
-      <!-- enスケジューラ -->
       <div class="product-item">
         <a href="https://www.en-scheduler.com/" target="_blank">
           <img src="./img/logo_en.png" alt="enスケジューラ ロゴ">
@@ -97,17 +153,13 @@
         </a>
         <div class="description">施設見学も面談も簡単Web予約</div>
       </div>
-
-      <!-- kids plus english -->
       <div class="product-item">
         <a href="https://www.kidsplus.school/" target="_blank">
           <img src="./img/logo_kpe.png" alt="kids plus english ロゴ">
-          <span class="label">kids plus english</span>
+          <span class="label">KIDS PLUS english</span>
         </a>
         <div class="description">楽しく学ぶ。未来を創る。オンライン英会話。</div>
       </div>
-
-      <!-- Fast DOCTOR -->
       <div class="product-item">
         <a href="https://fastdoctor.jp/free_transportation/kids-plus/" target="_blank">
           <img src="./img/logo_fastdoctor.png" alt="Fast DOCTOR ロゴ">
@@ -117,26 +169,27 @@
       </div>
     </div>
 
-    <!-- お知らせ -->
     <div class="infoBox">
       <p style="font-weight: bold; font-size: 16px;">お知らせ</p>
       <hr style="margin: 10px 0;">
       <ul style="list-style: none; padding: 0;">
-        <li style="margin-bottom: 10px;">
-          <span style="color: #666;">2025.08.15</span>
-          <span style="margin-left: 10px;">
+
+        <li class="info-item">
+          <span class="date">2025.08.15</span>
+          <div class="content">
             KIDS PLUS アプリ（保護者）の緊急連絡先優先順位設定機能をリリースしました。
-            <span>詳しくは、資料室よりご確認ください。</span>
-          </span>
+            <span class="tooltip">詳しくは、資料室よりご確認ください。</span>
+          </div>
         </li>
-        <li style="margin-bottom: 10px;">
-          <span style="color: #666;">2025.07.10</span>
-          <span style="margin-left: 10px;">
+
+        <li class="info-item">
+          <span class="date">2025.07.10</span>
+          <div class="content">
             KIDS PLUS ご利用マニュアルを更新しました。
-            <span>詳しくは、資料室よりご確認ください。</span>
-          </span>
+            <span class="tooltip">詳しくは、資料室よりご確認ください。</span>
+          </div>
         </li>
-      </ul>
+        </ul>
     </div>
 
   </div>
