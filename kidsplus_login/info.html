@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>お知らせ｜kids+work</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      color: #333;
+      padding: 20px;
+      background-image: url('./img/bg.jpg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center top;
+    }
+
+    .product-links {
+      display: flex;
+      gap: 40px;
+      margin-top: 30px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .product-item {
+      text-align: center;
+      width: 200px;
+    }
+
+    .product-item img {
+      height: 40px;
+      display: block;
+      margin: 0 auto 8px;
+      object-fit: contain;
+    }
+
+    .product-item .label {
+      font-weight: bold;
+      font-size: 14px;
+      color: #3366cc;
+      text-decoration: none;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .product-item .description {
+      font-size: 12px;
+      color: #555;
+    }
+
+    .infoBox {
+      margin-top: 40px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 15px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="infowrap">
+
+    <!-- メインメッセージ -->
+    <div id="msgBox" style="margin-bottom: 40px;">
+      <img src="./img/kidsplus.png" alt="KIDS PLUS ロゴ" style="height: 80px; display: block; margin-bottom: 40px;">
+      <p>最新のアップデート情報やシステム障害情報はこちらからご確認ください。</p>
+
+      <!-- アップデート・障害ボタン（横並び） -->
+      <div style="margin-top: 10px; display: flex; flex-direction: row; gap: 10px; flex-wrap: wrap;">
+        <a href="https://kidsplus.my.site.com/support/s/article/system-update?language=ja" target="_blank"
+           style="background: #6699cc; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
+          KIDS PLUS アップデート情報
+        </a>
+        <a href="https://kidsplus.my.site.com/support/s/article/system-failure?language=ja" target="_blank"
+           style="background: #6699cc; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
+          システム障害情報
+        </a>
+      </div>
+
+      <br>
+
+      <p><strong>kids+clock（iPadアプリ）をご利用の皆様へ</strong><br>
+         最新版へのアップデートをお願いします。</p>
+      <a href="https://kidsplus.my.site.com/support/s/article/work000001085?language=ja" target="_blank"
+         style="background: #6699cc; color: #fff; padding: 10px 20px; text-decoration: none; display: inline-block; border-radius: 4px;">
+        kids+clock アップデート方法
+      </a>
+    </div>
+
+    <!-- ロゴ＋リンク＋一言説明（3つ横並び） -->
+    <div class="product-links">
+      <!-- enスケジューラ -->
+      <div class="product-item">
+        <a href="https://www.en-scheduler.com/" target="_blank">
+          <img src="./img/logo_en.png" alt="enスケジューラ ロゴ">
+          <span class="label">enスケジューラ</span>
+        </a>
+        <div class="description">施設見学も面談も簡単Web予約</div>
+      </div>
+
+      <!-- kids plus english -->
+      <div class="product-item">
+        <a href="https://www.kidsplus.school/" target="_blank">
+          <img src="./img/logo_kpe.png" alt="kids plus english ロゴ">
+          <span class="label">kids plus english</span>
+        </a>
+        <div class="description">楽しく学ぶ。未来を創る。オンライン英会話。</div>
+      </div>
+
+      <!-- Fast DOCTOR -->
+      <div class="product-item">
+        <a href="https://fastdoctor.jp/free_transportation/kids-plus/" target="_blank">
+          <img src="./img/logo_fastdoctor.png" alt="Fast DOCTOR ロゴ">
+          <span class="label">Fast DOCTOR</span>
+        </a>
+        <div class="description">会員特典で往診無料（対象施設のみ）</div>
+      </div>
+    </div>
+
+    <!-- お知らせ -->
+    <div class="infoBox">
+      <p style="font-weight: bold; font-size: 16px;">お知らせ</p>
+      <hr style="margin: 10px 0;">
+      <ul style="list-style: none; padding: 0;">
+        <li style="margin-bottom: 10px;">
+          <span style="color: #666;">2025.08.15</span>
+          <span style="margin-left: 10px;">
+            KIDS PLUS アプリ（保護者）の緊急連絡先優先順位設定機能をリリースしました。
+            <span>詳しくは、資料室よりご確認ください。</span>
+          </span>
+        </li>
+        <li style="margin-bottom: 10px;">
+          <span style="color: #666;">2025.07.10</span>
+          <span style="margin-left: 10px;">
+            KIDS PLUS ご利用マニュアルを更新しました。
+            <span>詳しくは、資料室よりご確認ください。</span>
+          </span>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+
+</body>
+</html>

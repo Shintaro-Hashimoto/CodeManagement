@@ -1,0 +1,243 @@
+[
+    {
+        "Condition": {
+            "KeyPrefixEquals": "ios/"
+        },
+        "Redirect": {
+            "HostName": "apps.apple.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "jp/app/id1560266224"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "ios2/"
+        },
+        "Redirect": {
+            "HostName": "apps.apple.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "jp/app/id1560266224"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "clk/"
+        },
+        "Redirect": {
+            "HostName": "apps.apple.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "jp/app/id1116622610"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "adr/"
+        },
+        "Redirect": {
+            "HostName": "play.google.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "store/apps/details?id=jp.co.approg.kidsplus"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "and/"
+        },
+        "Redirect": {
+            "HostName": "play.google.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "store/apps/details?id=jp.co.approg.kidsplus"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "and2/"
+        },
+        "Redirect": {
+            "HostName": "play.google.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "store/apps/details?id=jp.co.approg.kidsplus"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "new/"
+        },
+        "Redirect": {
+            "HostName": "post.kidsplus.me",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "work/register.html"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "privacy/"
+        },
+        "Redirect": {
+            "HostName": "www.kidsplus.me",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "terms/privacy.html"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "support/"
+        },
+        "Redirect": {
+            "HostName": "kidsplus.my.site.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "support/s/contactsupport"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "psw/"
+        },
+        "Redirect": {
+            "HostName": "kidsplus.my.site.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "support/s/article/family000001029?language=ja"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "survey_cancel/"
+        },
+        "Redirect": {
+            "HostName": "kidsplus.my.site.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "com/survey/runtimeApp.app?invitationId=0KiAy00000000zb&surveyName=S_8e5ac5b6_69bd_4c44_98cd_5129db2c3f89&UUID=acbf4ef5-7ef8-4c80-a27a-ed9239a11575"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "survey_lending/"
+        },
+        "Redirect": {
+            "HostName": "kidsplus.my.site.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "com/survey/runtimeApp.app?invitationId=0KiAy000000012G&surveyName=S_354093bd_c1c0_493d_ad07_99bcb1e3ca9f&UUID=58c7aa12-908a-40f4-ba21-8a897aae99d6"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "support_manual/"
+        },
+        "Redirect": {
+            "HostName": "kidsplus.my.site.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "support/s/article/work000001102"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "s-info/"
+        },
+        "Redirect": {
+            "HostName": "kidsplus.my.site.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "support/s/article/system-failure"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "s-update/"
+        },
+        "Redirect": {
+            "HostName": "kidsplus.my.site.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "support/s/article/system-update"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "s-mainte/"
+        },
+        "Redirect": {
+            "HostName": "kidsplus.my.site.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "support/s/article/system-maintenance"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "price1/"
+        },
+        "Redirect": {
+            "HostName": "www.kidsplus.me",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "docs/kidsplus-price1.pdf"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "en/"
+        },
+        "Redirect": {
+            "HostName": "www.en-scheduler.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "index.html"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "en-manual/"
+        },
+        "Redirect": {
+            "HostName": "kidsplus.notion.site",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "support-en"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "en-update/"
+        },
+        "Redirect": {
+            "HostName": "www.en-scheduler.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "info"
+        }
+    },
+    {
+        "Condition": {
+            "KeyPrefixEquals": "eg/"
+        },
+        "Redirect": {
+            "HostName": "www.kidsplus.school",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "index.php"
+        }
+    },
+    {
+        "Condition": {
+            "HttpErrorCodeReturnedEquals": "404"
+        },
+        "Redirect": {
+            "HostName": "www.kidsplus.me",
+            "HttpRedirectCode": "301",
+            "ReplaceKeyWith": "index.php"
+        }
+    }
+]
