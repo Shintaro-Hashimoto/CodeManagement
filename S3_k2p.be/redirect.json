@@ -34,17 +34,6 @@
     },
     {
         "Condition": {
-            "KeyPrefixEquals": "adr/"
-        },
-        "Redirect": {
-            "HostName": "play.google.com",
-            "HttpRedirectCode": "301",
-            "Protocol": "https",
-            "ReplaceKeyWith": "store/apps/details?id=jp.co.approg.kidsplus"
-        }
-    },
-    {
-        "Condition": {
             "KeyPrefixEquals": "and/"
         },
         "Redirect": {
@@ -88,6 +77,19 @@
         }
     },
     {
+        "_comment": "施設向けマニュアル",
+        "Condition": {
+            "KeyPrefixEquals": "support_manual/"
+        },
+        "Redirect": {
+            "HostName": "kidsplus.my.site.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "support/s/article/work000001102"
+        }
+    },
+    {
+        "_comment": "お問い合わせフォーム",
         "Condition": {
             "KeyPrefixEquals": "support/"
         },
@@ -99,17 +101,55 @@
         }
     },
     {
+        "_comment": "家族招待方法（日本語）",
         "Condition": {
-            "KeyPrefixEquals": "psw/"
+            "KeyPrefixEquals": "kp/family-jp/"
         },
         "Redirect": {
             "HostName": "kidsplus.my.site.com",
             "HttpRedirectCode": "301",
             "Protocol": "https",
-            "ReplaceKeyWith": "support/s/article/family000001029?language=ja"
+            "ReplaceKeyWith": "support/s/article/family000001088"
         }
     },
     {
+        "_comment": "家族招待方法（英語）",
+        "Condition": {
+            "KeyPrefixEquals": "kp/family-en/"
+        },
+        "Redirect": {
+            "HostName": "kidsplus.my.site.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "support/s/article/family000001091"
+        }
+    },
+    {
+        "_comment": "家族招待方法（中国語）",
+        "Condition": {
+            "KeyPrefixEquals": "kp/family-cn/"
+        },
+        "Redirect": {
+            "HostName": "kidsplus.my.site.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "support/s/article/family000001103"
+        }
+    },
+    {
+        "_comment": "パスワード変更方法",
+        "Condition": {
+            "KeyPrefixEquals": "kp/psw/"
+        },
+        "Redirect": {
+            "HostName": "kidsplus.my.site.com",
+            "HttpRedirectCode": "301",
+            "Protocol": "https",
+            "ReplaceKeyWith": "support/s/article/family000001029"
+        }
+    },
+    {
+        "_comment": "アンケート（解約）",
         "Condition": {
             "KeyPrefixEquals": "survey_cancel/"
         },
@@ -121,6 +161,7 @@
         }
     },
     {
+        "_comment": "アンケート（レンタル）",
         "Condition": {
             "KeyPrefixEquals": "survey_lending/"
         },
@@ -129,17 +170,6 @@
             "HttpRedirectCode": "301",
             "Protocol": "https",
             "ReplaceKeyWith": "com/survey/runtimeApp.app?invitationId=0KiAy000000012G&surveyName=S_354093bd_c1c0_493d_ad07_99bcb1e3ca9f&UUID=58c7aa12-908a-40f4-ba21-8a897aae99d6"
-        }
-    },
-    {
-        "Condition": {
-            "KeyPrefixEquals": "support_manual/"
-        },
-        "Redirect": {
-            "HostName": "kidsplus.my.site.com",
-            "HttpRedirectCode": "301",
-            "Protocol": "https",
-            "ReplaceKeyWith": "support/s/article/work000001102"
         }
     },
     {
