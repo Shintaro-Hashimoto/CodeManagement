@@ -55,6 +55,27 @@
       border-radius: 6px;
     }
 
+    #msgBox p {
+      font-size: 14px; /* 文字サイズを14pxに設定 */
+      line-height: 1.6; /* 行間を少し広げて読みやすく */
+    }
+
+    /* ボタンのスタイルをクラスとして定義 */
+    .button-link {
+      background: #6699cc;
+      color: #fff;
+      padding: 8px 16px; /* ← ボタンの余白を調整 */
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 14px; /* 文字サイズを14pxに設定 */
+      display: inline-block; /* 他の要素との並びを整える */
+      transition: opacity 0.3s; /* ホバー時のアニメーション */
+    }
+    
+    .button-link:hover {
+        opacity: 0.8; /* マウスを乗せたら少し透明にする */
+    }
+
     /* ▼▼▼ ツールチップ用のCSS（ここから） ▼▼▼ */
     .info-item {
       display: flex; /* 日付と本文を横並びに */
@@ -127,20 +148,17 @@
       <img src="./img/kidsplus.png" alt="KIDS PLUS ロゴ" style="height: 80px; display: block; margin-bottom: 40px;">
       <p>最新のアップデート情報やシステム障害情報はこちらからご確認ください。</p>
       <div style="margin-top: 10px; display: flex; flex-direction: row; gap: 10px; flex-wrap: wrap;">
-        <a href="https://kidsplus.my.site.com/support/s/article/system-update?language=ja" target="_blank"
-           style="background: #6699cc; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
+        <a href="https://kidsplus.my.site.com/support/s/article/system-update?language=ja" target="_blank" class="button-link">
           KIDS PLUS アップデート情報
         </a>
-        <a href="https://kidsplus.my.site.com/support/s/article/system-failure?language=ja" target="_blank"
-           style="background: #6699cc; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
+        <a href="https://kidsplus.my.site.com/support/s/article/system-failure?language=ja" target="_blank" class="button-link">
           システム障害情報
         </a>
       </div>
       <br>
       <p><strong>kids+clock（iPadアプリ）をご利用の皆様へ</strong><br>
         最新版へのアップデートをお願いします。</p>
-      <a href="https://kidsplus.my.site.com/support/s/article/work000001085?language=ja" target="_blank"
-         style="background: #6699cc; color: #fff; padding: 10px 20px; text-decoration: none; display: inline-block; border-radius: 4px;">
+      <a href="https://kidsplus.my.site.com/support/s/article/work000001085?language=ja" target="_blank" class="button-link">
         kids+clock アップデート方法
       </a>
     </div>
@@ -148,7 +166,7 @@
     <div class="product-links">
       <div class="product-item">
         <a href="https://www.en-scheduler.com/" target="_blank">
-          <img src="./img/logo_en.png" alt="enスケジューラ ロゴ">
+          <img src="./img/logo_en.png" alt="enスケจューラ ロゴ">
           <span class="label">enスケジューラ</span>
         </a>
         <div class="description">施設見学も面談も簡単Web予約</div>
@@ -175,6 +193,14 @@
       <ul style="list-style: none; padding: 0;">
 
         <li class="info-item">
+          <span class="date">2025.08.19</span>
+          <div class="content">
+            KIDS PLUS アプリ（保護者）の登録マニュアルを更新しました。最新のマニュアルをダウンロードしてご利用ください。
+            <span class="tooltip">「全体管理」＞「システム管理」＞「保護者接続コード」から印刷できます。</span>
+          </div>
+        </li>
+
+        <li class="info-item">
           <span class="date">2025.08.15</span>
           <div class="content">
             KIDS PLUS アプリ（保護者）の緊急連絡先優先順位設定機能をリリースしました。
@@ -189,7 +215,7 @@
             <span class="tooltip">詳しくは、資料室よりご確認ください。</span>
           </div>
         </li>
-        </ul>
+      </ul>
     </div>
 
   </div>

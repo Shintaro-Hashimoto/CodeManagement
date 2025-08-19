@@ -1,0 +1,200 @@
+body {
+    font-family: "Meiryo UI";
+    background-color: transparent;
+}
+
+body,
+p,
+ul,
+li {
+    margin: 0;
+    padding: 0;
+}
+
+.clearfix:before,
+.clearfix:after {
+    content: " ";
+    display: table;
+}
+
+.clearfix:after {
+    clear: both;
+}
+
+.clearfix {
+    *zoom: 1;
+}
+
+a:link {
+    color: #3a5099;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #10256b;
+    text-decoration: underline;
+}
+
+a:visited {
+    color: #778ed6;
+}
+
+.infoBox {
+    padding: 0 10px;
+}
+
+.listBox {
+    width: inherit;
+    height: auto;
+    overflow: visible;
+}
+
+.infoBox .ttl {
+    border-bottom: 1px solid #ccc;
+    padding: 10px 0 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #555;
+}
+
+.infoBox ul,
+.infoBox li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.infoBox ul {
+    border-bottom: 1px solid #ccc;
+    width: 100%;
+}
+
+.infoBox li {
+    border-top: 1px dotted #ccc;
+    padding: 20px 0;
+    font-size: 16px;
+}
+
+.infoBox li:first-child {
+    border: none;
+}
+
+.infoBox .date {
+    float: left;
+    display: block;
+    width: 5.5em;
+    margin: 0 20px 0 0;
+}
+
+.infoBox .txt {
+    display: block;
+    overflow: hidden;
+    zoom: 1;
+}
+
+/* tooltip */
+.contentTooltip {
+    color: #555;
+    display: block;
+}
+
+.contentTooltip span {
+    display: none;
+}
+
+.contentTooltip:hover {
+    position: relative;
+    color: #333;
+}
+
+.contentTooltip:hover span {
+    display: block;
+    position: absolute;
+    top: 30px;
+    left: 80px;
+    font-size: 90%;
+    color: #fff;
+    background-color: #777;
+    width: 70%;
+    padding: 5px;
+    border-radius: 3px;
+    margin: auto;
+    z-index: 100;
+}
+
+.contentTooltip span:before {
+    content: '';
+    display: block;
+    position: absolute;
+    height: 0;
+    width: 0;
+    top: -13px;
+    left: 30px;
+    border: 13px transparent solid;
+    border-right-width: 0;
+    border-left-color: #777;
+    transform: rotate(270deg);
+    -webkit-transform: rotate(270deg);
+    -o-transform: rotate(270deg);
+    z-index: 100;
+}
+
+#infowrap {
+    margin: 50px 0;
+    padding: 0 50px;
+}
+
+#msgBox {
+    padding: 0 10px;
+    color: #555;
+    margin: 2em 0 20px 0;
+}
+
+#msg h2 {
+    font-size: 36px;
+    margin-bottom: 0.5em;
+}
+
+#msg h3 {
+    font-size: 28px;
+    padding: 0.5em 0 0 0;
+    margin-bottom: 0.5em;
+}
+
+#msg h4 {
+    font-size: 20px;
+    margin-bottom: 0.5em;
+    color: #555;
+}
+
+#msg p {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#msg .btn {
+    color: #fff;
+    background-color: #428bca;
+    border-color: #357ebd;
+    min-width: 160px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 6px 12px;
+    margin-bottom: 0;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.42857143;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    background-image: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
