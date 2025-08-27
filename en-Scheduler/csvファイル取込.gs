@@ -1,10 +1,10 @@
 /**
  * @system enスケジューラ
  * @fileoverview 指定されたフォルダのCSVファイルをスプレッドシートにインポートし、Slack API経由で結果を通知する
- * @version 4.0
+ * @version 5.1
  * @author (あなたの名前)
- * @date 2025-08-13
- * @description Slack通知をWebhookからAPI (chat.postMessage) 方式に変更
+ * @date 2025-08-28
+ * @description Slack通知のレイアウトを旧形式に近づけるよう修正（タイトル、項目順、カラースリット）
  */
 
 // ===========================
@@ -18,7 +18,6 @@ function importCsvAndArchive() {
   // ▼ スクリプトプロパティからチャンネルIDを取得 ▼
   const SLACK_CHANNEL_ID = PropertiesService.getScriptProperties().getProperty('SLACK_CHANNEL_ID');
 
-  // チャンネルIDが設定されているか確認
   if (!SLACK_CHANNEL_ID) {
     Logger.log('エラー: スクリプトプロパティに SLACK_CHANNEL_ID が設定されていません。');
     return;
@@ -55,7 +54,7 @@ function importCsvAndArchive() {
     if (fileList.length === 0) {
       const noFilesMsg = "処理対象のCSVファイルがありませんでした。";
       Logger.log(noFilesMsg);
-      postMessageWithApi(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "情報", noFilesMsg);
+      postHybridMessage(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "情報", noFilesMsg);
       return;
     }
 
@@ -87,12 +86,12 @@ function importCsvAndArchive() {
 
     const summaryMessage = `処理が完了しました。\n\n${logMessages.join('\n')}`;
     Logger.log(summaryMessage);
-    postMessageWithApi(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "正常終了", summaryMessage);
+    postHybridMessage(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "正常終了", summaryMessage);
 
   } catch (e) {
     const errorMessage = `処理中に致命的なエラーが発生しました。\nエラー内容: ${e.message}\nスタックトレース: ${e.stack}`;
     Logger.log(errorMessage);
-    postMessageWithApi(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "実行エラー", errorMessage);
+    postHybridMessage(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "実行エラー", errorMessage);
   }
 }
 
@@ -101,13 +100,13 @@ function importCsvAndArchive() {
 // ===========================
 
 /**
- * Slack API (chat.postMessage) を使って通知を送信する
+ * ★修正★ Block KitとAttachmentsを組み合わせたハイブリッド形式で通知を送信する
  * @param {string} channelId - 投稿先のチャンネルID
  * @param {string} title - 通知のタイトル
  * @param {string} status - 実行ステータス
  * @param {string} details - 詳細メッセージ
  */
-function postMessageWithApi(channelId, title, status, details) {
+function postHybridMessage(channelId, title, status, details) {
   const botToken = PropertiesService.getScriptProperties().getProperty('SLACK_BOT_TOKEN');
   if (!botToken) {
     Logger.log('Slackのボットトークンが設定されていません。');
@@ -121,18 +120,50 @@ function postMessageWithApi(channelId, title, status, details) {
     case "情報": statusText = "Information"; color = "#439fe0"; break;
     default: statusText = "Unknown"; color = "#808080"; break;
   }
+
   const payload = {
     "channel": channelId,
-    "text": `${title} 実行結果`,
-    "attachments": [{
-      "color": color,
-      "fields": [
-        { "title": "実行日時", "value": executionTime, "short": true },
-        { "title": "ステータス", "value": statusText, "short": true },
-        { "title": "詳細", "value": "```" + details + "```", "short": false }
-      ]
-    }]
+    "text": `${title} 実行結果: ${statusText}`, // フォールバックテキスト
+    "attachments": [
+      {
+        "color": color, // ★要望③: 左側の縦線の色を設定
+        "blocks": [
+          {
+            "type": "section", // ★要望①: headerからsectionに変更し、通常の太文字にする
+            "text": {
+              "type": "mrkdwn",
+              "text": `*${title}*`
+            }
+          },
+          {
+            "type": "section",
+            "fields": [
+              // ★要望②: 実行日時とステータスの順序を入れ替え
+              {
+                "type": "mrkdwn",
+                "text": `*実行日時:*\n${executionTime}`
+              },
+              {
+                "type": "mrkdwn",
+                "text": `*ステータス:*\n${statusText}`
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*詳細:*\n```" + details + "```"
+            }
+          }
+        ]
+      }
+    ]
   };
+
   const options = {
     'method': 'post',
     'contentType': 'application/json',

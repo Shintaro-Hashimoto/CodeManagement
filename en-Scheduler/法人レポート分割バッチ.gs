@@ -1,10 +1,10 @@
 /**
  * @system enスケジューラ
  * @fileoverview 法人ごとに履歴を分割してスプレッドシートに出力し、Slack API経由で結果を通知する
- * @version 4.2
+ * @version 5.1
  * @author (あなたの名前)
- * @date 2025-08-13
- * @description 'historySheet is not defined' エラーを修正
+ * @date 2025-08-28
+ * @description Slack通知のレイアウトを旧形式に近づけるよう修正（タイトル、項目順、カラースリット）
  */
 
 // ===========================
@@ -15,20 +15,18 @@ function splitHistoryByCorporation_withFormatting() {
   // ▼ 通知のタイトルを設定 ▼
   const SLACK_MESSAGE_TITLE = "【enスケジューラ：法人レポート分割バッチ】";
   
-  // ★修正点: スクリプトプロパティからチャンネルIDを取得
+  // スクリプトプロパティからチャンネルIDを取得
   const SLACK_CHANNEL_ID = PropertiesService.getScriptProperties().getProperty('SLACK_CHANNEL_ID');
 
-  // ★追加: チャンネルIDが設定されているか確認
   if (!SLACK_CHANNEL_ID) {
     Logger.log('エラー: スクリプトプロパティに SLACK_CHANNEL_ID が設定されていません。');
-    return; // 処理を中断
+    return;
   }
 
   let processedCount = 0;
   const updatedCorps = new Set();
 
   try {
-    // ▼▼▼ 修正点：省略されていた処理をすべて記述 ▼▼▼
     const historySheetId = "1_XLImss5Y0kC7ZZKLLK4vjjcImSlc_0wjCDlvouKQUA";
     const corpMapSheetId = "1nukNFft5yE2dyfporzp0UQFgBUXPk83lfNEeWLh0bQA";
     const outputFolderId = "1Q6GwCJ7eaRs_ThWA_T6CXiYgWLb6NmT-";
@@ -88,24 +86,23 @@ function splitHistoryByCorporation_withFormatting() {
       targetSheet.appendRow(formattedRow);
       historySheet.getRange(rowNum, idColIndex + 1).setValue(uuid);
     });
-    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
     // --- 処理終了後の通知 ---
     let summaryMessage;
     if (processedCount === 0) {
       summaryMessage = "新たに処理するレコードはありませんでした。";
       Logger.log(summaryMessage);
-      postMessageWithApi(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "情報", summaryMessage);
+      postHybridMessage(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "情報", summaryMessage);
     } else {
       summaryMessage = `処理が完了しました。\n・新規処理件数: ${processedCount} 件\n・更新/作成ファイル: ${Array.from(updatedCorps).join(", ")}`;
       Logger.log(summaryMessage);
-      postMessageWithApi(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "正常終了", summaryMessage);
+      postHybridMessage(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "正常終了", summaryMessage);
     }
 
   } catch (e) {
     const errorMessage = `処理中に致命的なエラーが発生しました。\nエラー内容: ${e.message}\nスタックトレース: ${e.stack}`;
     Logger.log(errorMessage);
-    postMessageWithApi(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "実行エラー", errorMessage);
+    postHybridMessage(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "実行エラー", errorMessage);
   }
 }
 
@@ -114,13 +111,13 @@ function splitHistoryByCorporation_withFormatting() {
 // ===========================
 
 /**
- * Slack API (chat.postMessage) を使って通知を送信する
+ * Block KitとAttachmentsを組み合わせたハイブリッド形式で通知を送信する
  * @param {string} channelId - 投稿先のチャンネルID
  * @param {string} title - 通知のタイトル
  * @param {string} status - 実行ステータス
  * @param {string} details - 詳細メッセージ
  */
-function postMessageWithApi(channelId, title, status, details) {
+function postHybridMessage(channelId, title, status, details) {
   const botToken = PropertiesService.getScriptProperties().getProperty('SLACK_BOT_TOKEN');
   if (!botToken) {
     Logger.log('Slackのボットトークンが設定されていません。');
@@ -134,18 +131,49 @@ function postMessageWithApi(channelId, title, status, details) {
     case "情報": statusText = "Information"; color = "#439fe0"; break;
     default: statusText = "Unknown"; color = "#808080"; break;
   }
+
   const payload = {
     "channel": channelId,
-    "text": `${title} 実行結果`,
-    "attachments": [{
-      "color": color,
-      "fields": [
-        { "title": "実行日時", "value": executionTime, "short": true },
-        { "title": "ステータス", "value": statusText, "short": true },
-        { "title": "詳細", "value": "```" + details + "```", "short": false }
-      ]
-    }]
+    "text": `${title} 実行結果: ${statusText}`, // フォールバックテキスト
+    "attachments": [
+      {
+        "color": color,
+        "blocks": [
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": `*${title}*`
+            }
+          },
+          {
+            "type": "section",
+            "fields": [
+              {
+                "type": "mrkdwn",
+                "text": `*実行日時:*\n${executionTime}`
+              },
+              {
+                "type": "mrkdwn",
+                "text": `*ステータス:*\n${statusText}`
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*詳細:*\n```" + details + "```"
+            }
+          }
+        ]
+      }
+    ]
   };
+
   const options = {
     'method': 'post',
     'contentType': 'application/json',
