@@ -1,10 +1,10 @@
 /**
  * @system enスケジューラ
  * @fileoverview 指定されたフォルダのCSVファイルをスプレッドシートにインポートし、Slack API経由で結果を通知する
- * @version 5.1
+ * @version 5.3
  * @author (あなたの名前)
  * @date 2025-08-28
- * @description Slack通知のレイアウトを旧形式に近づけるよう修正（タイトル、項目順、カラースリット）
+ * @description Slack通知のテキストを法人レポート分割バッチと統一
  */
 
 // ===========================
@@ -100,7 +100,7 @@ function importCsvAndArchive() {
 // ===========================
 
 /**
- * ★修正★ Block KitとAttachmentsを組み合わせたハイブリッド形式で通知を送信する
+ * Block KitとAttachmentsを組み合わせたハイブリッド形式で通知を送信する
  * @param {string} channelId - 投稿先のチャンネルID
  * @param {string} title - 通知のタイトル
  * @param {string} status - 実行ステータス
@@ -121,24 +121,25 @@ function postHybridMessage(channelId, title, status, details) {
     default: statusText = "Unknown"; color = "#808080"; break;
   }
 
+  const shortTitle = title.substring(title.indexOf('：') + 1, title.length - 1);
+
   const payload = {
     "channel": channelId,
-    "text": `${title} 実行結果: ${statusText}`, // フォールバックテキスト
+    "text": `${title} 実行結果`,
     "attachments": [
       {
-        "color": color, // ★要望③: 左側の縦線の色を設定
+        "color": color,
         "blocks": [
           {
-            "type": "section", // ★要望①: headerからsectionに変更し、通常の太文字にする
+            "type": "section",
             "text": {
               "type": "mrkdwn",
-              "text": `*${title}*`
+              "text": `*${shortTitle}*`
             }
           },
           {
             "type": "section",
             "fields": [
-              // ★要望②: 実行日時とステータスの順序を入れ替え
               {
                 "type": "mrkdwn",
                 "text": `*実行日時:*\n${executionTime}`

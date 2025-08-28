@@ -1,10 +1,10 @@
 /**
  * @system enスケジューラ
  * @fileoverview 法人ごとに履歴を分割してスプレッドシートに出力し、Slack API経由で結果を通知する
- * @version 5.1
+ * @version 5.4
  * @author (あなたの名前)
  * @date 2025-08-28
- * @description Slack通知のレイアウトを旧形式に近づけるよう修正（タイトル、項目順、カラースリット）
+ * @description 出力先フォルダIDを修正
  */
 
 // ===========================
@@ -29,7 +29,8 @@ function splitHistoryByCorporation_withFormatting() {
   try {
     const historySheetId = "1_XLImss5Y0kC7ZZKLLK4vjjcImSlc_0wjCDlvouKQUA";
     const corpMapSheetId = "1nukNFft5yE2dyfporzp0UQFgBUXPk83lfNEeWLh0bQA";
-    const outputFolderId = "1Q6GwCJ7eaRs_ThWA_T6CXiYgWLb6NmT-";
+    // ★修正点: 新しいフォルダIDに更新
+    const outputFolderId = "1l5MT7BO4vz4siWF7HMBoXtiGAGyKlwxR";
 
     const historySS = SpreadsheetApp.openById(historySheetId);
     const corpMapSS = SpreadsheetApp.openById(corpMapSheetId);
@@ -94,7 +95,8 @@ function splitHistoryByCorporation_withFormatting() {
       Logger.log(summaryMessage);
       postHybridMessage(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "情報", summaryMessage);
     } else {
-      summaryMessage = `処理が完了しました。\n・新規処理件数: ${processedCount} 件\n・更新/作成ファイル: ${Array.from(updatedCorps).join(", ")}`;
+      const updatedFilesList = Array.from(updatedCorps).map(corpName => `✅${corpName}`).join('\n');
+      summaryMessage = `処理が完了しました。\n✅新規処理件数: ${processedCount} 件\n【更新/作成ファイル】\n${updatedFilesList}`;
       Logger.log(summaryMessage);
       postHybridMessage(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "正常終了", summaryMessage);
     }
@@ -132,9 +134,11 @@ function postHybridMessage(channelId, title, status, details) {
     default: statusText = "Unknown"; color = "#808080"; break;
   }
 
+  const shortTitle = title.substring(title.indexOf('：') + 1, title.length - 1);
+
   const payload = {
     "channel": channelId,
-    "text": `${title} 実行結果: ${statusText}`, // フォールバックテキスト
+    "text": `${title} 実行結果`,
     "attachments": [
       {
         "color": color,
@@ -143,7 +147,7 @@ function postHybridMessage(channelId, title, status, details) {
             "type": "section",
             "text": {
               "type": "mrkdwn",
-              "text": `*${title}*`
+              "text": `*${shortTitle}*`
             }
           },
           {
