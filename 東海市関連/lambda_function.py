@@ -1,7 +1,7 @@
 import boto3
 import os
 import json
-import time  # timeモジュールをインポート
+import time
 import urllib3
 from datetime import datetime, timezone, timedelta
 from google.oauth2 import service_account
@@ -38,75 +38,105 @@ def get_or_create_folder(drive_service, folder_name, parent_id):
         return folder.get('id')
 
 # ==============================================================================
-# ■ ヘルパー関数 (Slack通知担当)
+# ■ Slack通知担当関数 (lemon-qlsプロジェクトと共通の新しい形式)
 # ==============================================================================
-def send_slack_notification(webhook_url, status, file_name, details=""):
-    """Slackに実行結果を通知する"""
+def post_hybrid_message(bot_token, channel_id, title_prefix, file_name, status, details):
+    """Block KitとAttachmentsを組み合わせたハイブリッド形式で通知を送信する"""
+    if not bot_token or not channel_id:
+        print("SlackのボットトークンまたはチャンネルIDが設定されていません。")
+        return
+
     jst = timezone(timedelta(hours=+9), 'JST')
     exec_time = datetime.now(jst).strftime('%Y/%m/%d %H:%M:%S')
-    color = "#36a64f" if status == "Success" else "#d50000"
-    status_icon = "✅" if status == "Success" else "❌"
     
-    if status == "Success":
-        details_text = f"*詳細*\n{status_icon} {file_name} を取り込みました\n```{details}```"
-    else:
-        details_text = f"*詳細*\n{status_icon} {file_name} の処理に失敗しました\n```{details}```"
+    status_map = {
+        "正常終了": {"text": "Success", "color": "#36a64f"},
+        "実行エラー": {"text": "Failure", "color": "#e01e5a"}
+    }
+    current_status = status_map.get(status, {"text": "Unknown", "color": "#808080"})
+    status_text = current_status["text"]
+    color = current_status["color"]
+    
+    main_title = f"CSVファイル取込: {file_name}"
 
-    slack_message = {
-        "text": "【東海市勤怠データ：CSVファイル取込】実行結果",
+    payload = {
+        "channel": channel_id,
+        "text": f"{title_prefix} 実行結果",
         "attachments": [
-            {"color": color, "blocks": [{"type": "section", "text": { "type": "mrkdwn", "text": "*S3 to Google Drive (tokai)*" }},{"type": "section", "fields": [{ "type": "mrkdwn", "text": f"*実行日時*\n{exec_time}" },{ "type": "mrkdwn", "text": f"*ステータス*\n{status}" }]},{"type": "section", "text": { "type": "mrkdwn", "text": details_text }}]}
+            {
+                "color": color,
+                "blocks": [
+                    {"type": "section", "text": {"type": "mrkdwn", "text": f"*{main_title}*"}},
+                    {"type": "section", "fields": [
+                        {"type": "mrkdwn", "text": f"*実行日時:*\n{exec_time}"},
+                        {"type": "mrkdwn", "text": f"*ステータス:*\n{status_text}"}
+                    ]},
+                    {"type": "divider"},
+                    {"type": "section", "text": {"type": "mrkdwn", "text": f"*詳細:*\n```{details}```"}}
+                ]
+            }
         ]
     }
     
     try:
-        encoded_msg = json.dumps(slack_message).encode('utf-8')
-        http.request('POST', webhook_url, body=encoded_msg, headers={'Content-Type': 'application/json'})
+        api_url = 'https://slack.com/api/chat.postMessage'
+        headers = {'Content-Type': 'application/json; charset=utf-8', 'Authorization': f'Bearer {bot_token}'}
+        encoded_msg = json.dumps(payload).encode('utf-8')
+        resp = http.request('POST', api_url, body=encoded_msg, headers=headers)
+        print(f"Slack通知送信結果: {resp.status}")
+        print(f"Slack APIからのレスポンス: {resp.data.decode('utf-8')}")
     except Exception as e:
         print(f"Slack通知送信エラー: {e}")
 
 # ==============================================================================
-# ■ メイン関数
+# ■ メイン関数 (tokaiプロジェクトのロジック)
 # ==============================================================================
 def lambda_handler(event, context):
-    slack_webhook_url = ""
+    
+    slack_bot_token = ""
+    slack_channel_id = ""
+    title_prefix = "【東海市勤怠データ】"
+
     try:
-        webhook_secret = secrets_manager_client.get_secret_value(SecretId=os.environ['SLACK_SECRET_NAME'])
-        slack_webhook_url = webhook_secret['SecretString']
+        # --- (修正) 新しい方式でSlack認証情報を取得 ---
+        token_secret = secrets_manager_client.get_secret_value(SecretId="slack/bot-token")
+        slack_bot_token = token_secret['SecretString']
+        
+        channel_secret = secrets_manager_client.get_secret_value(SecretId="slack/channel-id")
+        slack_channel_id = channel_secret['SecretString']
+        
+        google_secret = secrets_manager_client.get_secret_value(SecretId="google/drive-api-credentials")
+        service_account_info = json.loads(google_secret['SecretString'])
+        
     except Exception as e:
-        print(f"Slack Webhook URLの取得に失敗: {e}")
+        print(f"AWS Secrets Managerからの認証情報取得に失敗しました: {e}")
+        return {'statusCode': 500, 'body': 'Failed to get credentials.'}
 
     file_name = "N/A"
+    s3_path = "N/A"
     try:
-        # ★★★★★ 修正点 ★★★★★
-        # ファイル書き込み完了を待つため、10秒間待機する
-        print("ファイル書き込み完了を待機します... (10秒)")
-        time.sleep(10)
-        print("待機完了。処理を再開します。")
-        # ★★★★★★★★★★★★★★★
-
-        # --- S3イベント解析 ---
+        time.sleep(10) # 10秒待機
+        
+        # --- S3イベント解析 (tokaiプロジェクトのロジック) ---
         bucket_name = event['Records'][0]['s3']['bucket']['name']
         s3_key = unquote_plus(event['Records'][0]['s3']['object']['key'])
+        s3_path = f"s3://{bucket_name}/{s3_key}"
         file_name = os.path.basename(s3_key)
         
         s3_path_parts = os.path.dirname(s3_key).split('/')
         
-        # --- Google Drive 認証 ---
-        google_secret = secrets_manager_client.get_secret_value(SecretId=os.environ['GOOGLE_SECRET_NAME'])
-        service_account_info = json.loads(google_secret['SecretString'])
+        # --- Google Drive 認証 & フォルダ作成 (tokaiプロジェクトのロジック) ---
         creds = service_account.Credentials.from_service_account_info(
             service_account_info, scopes=['https://www.googleapis.com/auth/drive'])
         drive_service = build('drive', 'v3', credentials=creds)
 
-        # --- Google Drive フォルダ構造の作成 ---
         parent_folder_id = os.environ['DRIVE_ROOT_FOLDER_ID']
         for folder_name in s3_path_parts:
             parent_folder_id = get_or_create_folder(drive_service, folder_name, parent_folder_id)
         
         destination_folder_id = parent_folder_id
         
-        # --- S3からダウンロード & Google Driveへアップロード ---
+        # --- S3からダウンロード & Google Driveへアップロード (tokaiプロジェクトのロジック) ---
         local_path = f'/tmp/{file_name}'
         s3_client.download_file(bucket_name, s3_key, local_path)
         
@@ -116,15 +146,21 @@ def lambda_handler(event, context):
             body=file_metadata, media_body=media, fields='id', supportsAllDrives=True).execute()
         drive_file_id = file.get('id')
         
-        # --- 成功通知 ---
-        if slack_webhook_url:
-            success_details = f"S3 Path: s3://{bucket_name}/{s3_key}\nGoogle Drive File ID: {drive_file_id}"
-            send_slack_notification(slack_webhook_url, "Success", file_name, success_details)
+        # --- (修正) 新しい方式で成功通知 ---
+        success_details = (
+            f"✅ S3 Path: {s3_path}\n"
+            f"✅ Google Drive File ID: {drive_file_id}"
+        )
+        post_hybrid_message(slack_bot_token, slack_channel_id, title_prefix, file_name, "正常終了", success_details)
             
         return {'statusCode': 200, 'body': json.dumps(f'Successfully processed {s3_key}')}
 
     except Exception as e:
         print(f"[ERROR] 処理中にエラーが発生しました: {e}")
-        if slack_webhook_url:
-            send_slack_notification(slack_webhook_url, "Failure", file_name, str(e))
+        # --- (修正) 新しい方式で失敗通知 ---
+        error_details = (
+            f"❌ S3 Path: {s3_path}\n"
+            f"❌ Error: {e}"
+        )
+        post_hybrid_message(slack_bot_token, slack_channel_id, title_prefix, file_name, "実行エラー", error_details)
         raise e
