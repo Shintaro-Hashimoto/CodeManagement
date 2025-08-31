@@ -1,136 +1,28 @@
 /**
- * @system 東海市勤怠データ自動仕分け
- * @fileoverview Google Drive上のCSVをExcelに変換し、実行結果をSlack API経由で通知するスクリプト。
- * @version 38.0 - Final with Diagnostic Check
- * @@description 前提条件をチェックする診断機能を含む最終バージョン。
+ * Google Drive上のCSVをExcelに変換し、実行結果をSlack API経_new_format由で通知するスクリプト。
+ * Slack通知の形式をBlock Kitベースの新しいフォーマットに更新。
  *
+ * @version 39.0 - Final with New Slack Format
  */
 
-// =========================================================================
-// STEP 1: まず、この診断関数を実行してください
-// =========================================================================
-
-/**
- * Slack通知の前提条件（プロパティ読み取りと外部通信）が正常に動作するかを確認する診断関数。
- */
-function checkSlackPrerequisites() {
-  Logger.log("--- 診断関数 checkSlackPrerequisites を開始します ---");
-  let botToken, channelId;
-  let success = true;
-
-  // 1. スクリプトプロパティの読み取りテスト
-  try {
-    botToken = PropertiesService.getScriptProperties().getProperty('SLACK_BOT_TOKEN');
-    channelId = PropertiesService.getScriptProperties().getProperty('SLACK_CHANNEL_ID');
-    if (!botToken || !channelId) {
-      throw new Error("SLACK_BOT_TOKEN または SLACK_CHANNEL_ID が設定されていません。");
-    }
-    Logger.log("✅ スクリプトプロパティの読み取りに成功しました。");
-  } catch (e) {
-    Logger.log("❌ スクリプトプロパティの読み取り中にエラーが発生しました: " + e.message);
-    success = false;
-  }
-
-  // 2. Slack APIへの通信テスト
-  if (success) {
-    try {
-      const payload = {
-        "channel": channelId,
-        "text": "【東海市：勤怠データ生成バッチ】診断チェック\n> ✅ Slack APIへの通信テストに成功しました。"
-      };
-      const options = {
-        'method': 'post',
-        'contentType': 'application/json; charset=utf-8',
-        'headers': { 'Authorization': 'Bearer ' + botToken },
-        'payload': JSON.stringify(payload)
-      };
-      const response = UrlFetchApp.fetch('https://slack.com/api/chat.postMessage', options);
-      Logger.log("✅ Slack APIへの通信テストに成功しました。Response: " + response.getContentText());
-    } catch (e) {
-      Logger.log("❌ Slack APIへの通信中にエラーが発生しました: " + e.message);
-      success = false;
-    }
-  }
-
-  if (success) {
-    Logger.log("--- ✅ 診断は正常に完了しました。runBatchAndNotifyByApi を実行してください。 ---");
-  } else {
-    Logger.log("--- ❌ 診断でエラーが検出されました。上記のエラーメッセージを確認してください。 ---");
-  }
-}
-
-
-// =========================================================================
-// STEP 2: 診断が成功した場合のみ、このメイン関数を実行してください
-// =========================================================================
-
-/**
- * Slack APIを使って実行結果を通知する
- * @param {boolean} isSuccess - 処理が成功したかどうか
- * @param {string[]} logs - 実行ログの配列
- */
-function sendSlackApiReport(isSuccess, logs) {
-  const SLACK_MESSAGE_TITLE = "【東海市：勤怠データ生成バッチ】";
-  const botToken = PropertiesService.getScriptProperties().getProperty('SLACK_BOT_TOKEN');
-  const channelId = PropertiesService.getScriptProperties().getProperty('SLACK_CHANNEL_ID');
-
-  if (!botToken || !channelId) {
-    Logger.log('SlackのボットトークンまたはチャンネルIDが設定されていません。');
-    return;
-  }
-
-  const executionTime = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm:ss');
-  let resultText;
-  let color;
-
-  if (isSuccess) {
-    resultText = "処理が正常に完了しました。";
-    color = "#36a64f"; // 緑
-  } else {
-    resultText = "処理中にエラーが発生しました。";
-    color = "#e01e5a"; // 赤
-  }
-
-  const logArray = Array.isArray(logs) ? logs : ['ログがありません。'];
-  let logText = logArray.join('\n');
-  if (logText.length > 2800) {
-    logText = logText.substring(0, 2800) + "\n...(ログが長すぎるため省略)...";
-  }
-
-  const payload = {
-    "channel": channelId,
-    "text": SLACK_MESSAGE_TITLE + " 実行結果通知",
-    "attachments": [
-      {
-        "color": color,
-        "fields": [
-          { "title": "実行日時", "value": executionTime, "short": true },
-          { "title": "ステータス", "value": resultText, "short": true }
-        ],
-        "text": "```" + logText + "```",
-        "mrkdwn_in": ["text"]
-      }
-    ]
-  };
-
-  const options = {
-    'method': 'post',
-    'contentType': 'application/json; charset=utf-8',
-    'headers': { 'Authorization': 'Bearer ' + botToken },
-    'payload': JSON.stringify(payload)
-  };
-
-  try {
-    UrlFetchApp.fetch('https://slack.com/api/chat.postMessage', options);
-  } catch (e) {
-    Logger.log('Slack APIへの通知に失敗しました: ' + e.message);
-  }
-}
+// ===========================
+// メイン処理
+// ===========================
 
 /**
  * メインの実行関数。この関数をトリガーに設定する。
  */
-function runBatchAndNotifyByApi() {
+function runAndNotifyInNewFormat() {
+  // ▼ 通知のタイトルを設定 ▼
+  const SLACK_MESSAGE_TITLE = "【東海市：勤怠データ生成バッチ】";
+  
+  // スクリプトプロパティからチャンネルIDを取得
+  const SLACK_CHANNEL_ID = PropertiesService.getScriptProperties().getProperty('SLACK_CHANNEL_ID');
+  if (!SLACK_CHANNEL_ID) {
+    Logger.log('エラー: スクリプトプロパティに SLACK_CHANNEL_ID が設定されていません。');
+    return;
+  }
+
   const logLines = [];
   const customLogger = function(message) {
     Logger.log(message);
@@ -141,7 +33,7 @@ function runBatchAndNotifyByApi() {
 
   try {
     executeMainLogic(customLogger);
-    sendSlackApiReport(true, logLines);
+    postHybridMessage(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "正常終了", logLines.join('\n'));
   } catch (e) {
     let errorDetails = [];
     try {
@@ -154,13 +46,15 @@ function runBatchAndNotifyByApi() {
     } catch (parsingError) {
       errorDetails = ['エラーオブジェクトの解析中に、さらに別のエラーが発生しました。'];
     }
-    customLogger(errorDetails.join('\n'));
-    sendSlackApiReport(false, errorDetails);
+    const errorMessage = errorDetails.join('\n');
+    customLogger(errorMessage);
+    postHybridMessage(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "実行エラー", errorMessage);
   }
 }
 
+
 /**
- * 実際のファイル処理を行う関数
+ * 実際のファイル処理を行う関数（ロジックは変更なし）
  * @param {function} customLogger - ログ出力用の関数
  */
 function executeMainLogic(customLogger) {
@@ -223,6 +117,96 @@ function executeMainLogic(customLogger) {
   }
 }
 
+
+// ===========================
+// ユーティリティ関数
+// ===========================
+
+/**
+ * 【NEW】Block KitとAttachmentsを組み合わせたハイブリッド形式で通知を送信する
+ * @param {string} channelId - 投稿先のチャンネルID
+ * @param {string} title - 通知のタイトル
+ * @param {string} status - 実行ステータス ("正常終了", "実行エラー", "情報")
+ * @param {string} details - 詳細メッセージ
+ */
+function postHybridMessage(channelId, title, status, details) {
+  const botToken = PropertiesService.getScriptProperties().getProperty('SLACK_BOT_TOKEN');
+  if (!botToken) {
+    Logger.log('Slackのボットトークンが設定されていません。');
+    return;
+  }
+  const executionTime = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm:ss');
+  let statusText, color;
+  switch (status) {
+    case "正常終了": statusText = "Success"; color = "#36a64f"; break;
+    case "実行エラー": statusText = "Failure"; color = "#e01e5a"; break;
+_message
+    case "情報": statusText = "Information"; color = "#439fe0"; break;
+    default: statusText = "Unknown"; color = "#808080"; break;
+  }
+
+  const shortTitle = title.substring(title.indexOf('：') + 1, title.length - 1);
+
+  const payload = {
+    "channel": channelId,
+    "text": `${title} 実行結果`, // 通知のフォールバックテキスト
+    "attachments": [
+      {
+        "color": color,
+        "blocks": [
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": `*${shortTitle}*`
+            }
+          },
+          {
+            "type": "section",
+            "fields": [
+              {
+                "type": "mrkdwn",
+                "text": `*実行日時:*\n${executionTime}`
+              },
+              {
+                "type": "mrkdwn",
+                "text": `*ステータス:*\n${statusText}`
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*詳細:*\n```" + details + "```"
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const options = {
+    'method': 'post',
+    'contentType': 'application/json; charset=utf-8',
+    'headers': {
+      'Authorization': 'Bearer ' + botToken
+    },
+    'payload': JSON.stringify(payload)
+  };
+  try {
+    UrlFetchApp.fetch('https://slack.com/api/chat.postMessage', options);
+  } catch (e) {
+    Logger.log('Slack APIへの通知に失敗しました: ' + e.message);
+  }
+}
+
+
+// --- 以下、ファイル処理関連のヘルパー関数（ロジックは変更なし） ---
+
 function findAndProcessCsv(facilityFolder, dtFolderName, expectedCsvFileName, xlsxFileName, outputFolder, logPrefix, customLogger) {
     const subfolders = facilityFolder.getFoldersByName(dtFolderName);
     if (subfolders.hasNext()) {
@@ -243,38 +227,27 @@ function processSingleFile(csvFile, xlsxFileName, outputFolder, logPrefix, expec
   try {
     const csvBlob = csvFile.getBlob();
     let csvData = Utilities.parseCsv(csvBlob.getDataAsString('utf-8'));
-
     if (csvData.length === 0) {
       customLogger('[デバッグ] ' + logPrefix + ': UTF-8でデータが0行でした。Shift_JISで再試行します。');
       csvData = Utilities.parseCsv(csvBlob.getDataAsString('sjis'));
     }
-
     if (csvData.length === 0 || !csvData[0] || csvData[0].length === 0) {
       customLogger('⚠ 空CSVファイル、またはパース失敗: ' + logPrefix);
       return;
     }
-
     customLogger('📄 ' + expectedCsvFileName + ' → 読み取り行数: ' + csvData.length + ' (' + logPrefix + ')');
-
     const tempSpreadsheet = SpreadsheetApp.create('TEMP_' + logPrefix + '_' + new Date().getTime());
     const sheet = tempSpreadsheet.getSheets()[0];
     sheet.getRange(1, 1, csvData.length, csvData[0].length).setValues(csvData);
-
     SpreadsheetApp.flush();
-
     const tempFileId = tempSpreadsheet.getId();
     const url = 'https://www.googleapis.com/drive/v3/files/' + tempFileId + '/export?mimeType=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     const token = ScriptApp.getOAuthToken();
-    const response = UrlFetchApp.fetch(url, {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-
+    const response = UrlFetchApp.fetch(url, { headers: { Authorization: 'Bearer ' + token } });
     const blob = response.getBlob().setName(xlsxFileName);
     outputFolder.createFile(blob);
     customLogger('✅ ' + xlsxFileName + ' を保存しました');
-
     DriveApp.getFileById(tempFileId).setTrashed(true);
-
   } catch (e) {
     customLogger('❌ エラー: ' + logPrefix + ' → ' + e.message);
     throw e;
@@ -288,9 +261,7 @@ function getFacilityMaster(sheetId) {
   for (let i = 1; i < data.length; i++) {
     const no = data[i][0];
     const name = data[i][1];
-    if (no && name) {
-      map[no.toString()] = name.toString().trim();
-    }
+    if (no && name) { map[no.toString()] = name.toString().trim(); }
   }
   return map;
 }
