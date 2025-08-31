@@ -1,3 +1,6 @@
+# ==============================================================================
+# 必要なライブラリをすべてインポート
+# ==============================================================================
 import boto3
 import os
 import json
@@ -14,8 +17,8 @@ s3_client = boto3.client('s3')
 secrets_manager_client = boto3.client('secretsmanager')
 http = urllib3.PoolManager()
 
-# ★★★★★ 修正点 ★★★★★
-# より具体的な（長い）ファイル名からチェックするように順序を入れ替え
+# ファイル名とGoogle Driveフォルダ情報の対応表
+# より具体的な（長い）ファイル名からチェックするように順序を定義
 DRIVE_FOLDER_MAPPING = {
     "qls_attendance_and_departure_": {
         "id": "1G5dSYx73TdWsGfpKOksCwaV3hYBiSeed",
@@ -38,7 +41,6 @@ DRIVE_FOLDER_MAPPING = {
         "name": "園児データ"
     }
 }
-# ★★★★★★★★★★★★★★★
 
 # ==============================================================================
 # ■ Slack通知担当関数
