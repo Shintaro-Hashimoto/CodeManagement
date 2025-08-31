@@ -1,0 +1,12 @@
+{
+  "name": "voice-mail-to-text-starter",
+  "version": "2.0.0",
+  "description": "Starts a Transcribe job from an S3 WAV file.",
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.583.0",
+    "@aws-sdk/client-transcribe": "^3.583.0",
+    "@aws-sdk/client-dynamodb": "^3.583.0",
+    "@aws-sdk/lib-dynamodb": "^3.583.0"
+  }
+}

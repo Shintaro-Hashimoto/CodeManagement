@@ -1,0 +1,9 @@
+{
+  "name": "voice-mail-stream-logger",
+  "version": "2.0.0",
+  "description": "Logs Connect stream metadata to S3.",
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.583.0"
+  }
+}
