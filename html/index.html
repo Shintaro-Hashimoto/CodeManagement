@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>システム障害のお知らせ｜kids plus / enスケジューラ</title>
+  <meta name="description" content="現在、システム障害が発生しています。復旧に向けて対応中です。" />
+  <!-- 自動リロード（120秒ごと） -->
+  <meta http-equiv="refresh" content="120">
+  <style>
+    :root{
+      --bg:#0b1020; --card:#111831; --text:#e8eeff; --muted:#b7c3ff;
+      --accent:#ff4d4f; --link:#93c5fd; --border:#22305a;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic", "Meiryo", sans-serif;
+      background: radial-gradient(1200px 600px at 70% -10%, #1c2660 10%, transparent 60%) no-repeat,
+                  radial-gradient(1000px 600px at 0% 110%, #0c143e 10%, transparent 60%) no-repeat, var(--bg);
+      color:var(--text); line-height:1.7; letter-spacing:.02em;
+    }
+    .wrap{max-width:920px; margin:0 auto; padding:40px 20px 64px}
+    header{display:flex; align-items:center; gap:14px; margin-bottom:18px}
+    .logo{width:36px; height:36px; border-radius:10px; background:#ffffff0d; display:grid; place-items:center; border:1px solid var(--border); font-weight:700; color:#c7d2fe}
+    h1{margin:0; font-size: clamp(20px, 3.2vw, 28px)}
+    .badge{display:inline-block; padding:6px 10px; border-radius:999px; font-weight:700; letter-spacing:.06em;
+      background: color-mix(in oklab, var(--accent) 25%, transparent);
+      border:1px solid color-mix(in oklab, var(--accent) 55%, transparent); color:#ffe6e7; font-size:12px; margin-left:8px}
+    .card{background: linear-gradient(180deg, #0e1733 0%, #0d142b 100%); border:1px solid var(--border); border-radius:16px; padding:20px; margin:16px 0; box-shadow: 0 20px 50px -30px #0008}
+    .grid{display:grid; gap:16px}
+    @media (min-width:720px){ .grid{grid-template-columns:1.2fr 0.8fr} }
+    h2{font-size: clamp(16px, 2.6vw, 20px); margin:0 0 8px}
+    ul{margin:8px 0 0 18px}
+    .muted{color:var(--muted)}
+    .kvs{display:grid; grid-template-columns:120px 1fr; gap:8px 14px; margin:0}
+    .kvs dt{color:#cbd5e1}
+    .kvs dd{margin:0}
+    .hr{height:1px; background:var(--border); margin:16px 0}
+    .btns{display:flex; flex-wrap:wrap; gap:10px; margin-top:10px}
+    .btn{appearance:none; border:1px solid var(--border); background:#162148; color:var(--text);
+      padding:10px 14px; border-radius:12px; cursor:pointer; text-decoration:none; font-weight:600}
+    .btn:hover{background:#1b2754}
+    .btn--retry{border-color: color-mix(in oklab, var(--accent) 45%, var(--border))}
+    .down{color:var(--accent); font-weight:700}
+    footer{margin-top:32px; font-size:13px; color:#c7d2fe}
+    a{color:var(--link)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">KP</div>
+      <div>
+        <h1>システム障害発生のお知らせ <span class="badge">INCIDENT</span></h1>
+        <div class="muted">現在、サービスに障害が発生しており、復旧作業を行っております。</div>
+      </div>
+    </header>
+
+    <section class="card grid">
+      <div>
+        <h2>現在の状況</h2>
+        <p class="down">
+          ・すべてのシステムにアクセスが出来ない／登降園管理が使えない
+          ・弊社カスタマーサポートに電話が繋がらない
+        </p>
+        <p>
+          原因の調査と復旧作業を継続しております。最新情報は
+          <a href="https://kidsplus.my.site.com/support/s/article/system-failure?language=ja" target="_blank">
+            弊社サポートページ
+          </a>をご確認ください。
+        </p>
+
+        <div class="hr"></div>
+        <h2>影響範囲</h2>
+        <ul>
+          <li>全てのサービス（施設管理画面、保護者アプリ、登降園管理）</li>
+        </ul>
+
+        <div class="btns">
+          <button class="btn btn--retry" onclick="location.reload()">ページを再読み込み</button>
+          <a class="btn" href="mailto:support@kidsplus.co?subject=%5B障害問い合わせ%5D%20kids%20plus">サポートへ連絡</a>
+        </div>
+      </div>
+
+      <aside>
+        <h2>ステータス</h2>
+        <dl class="kvs">
+          <dt>発生日</dt><dd>2025-09-24 07:00頃から</dd>
+          <dt>最終更新</dt><dd id="updated">—</dd>
+        </dl>
+
+        <div class="hr"></div>
+        <h2>お問い合わせ</h2>
+        <p class="muted">
+          障害に関するお問い合わせは
+          <a href="mailto:support@kidsplus.co">support@kidsplus.co</a>
+          までお願いいたします。
+        </p>
+      </aside>
+    </section>
+
+    <footer>
+      <div>© kids plus, All rights reserved.</div>
+      <div id="tz" class="muted"></div>
+    </footer>
+  </div>
+
+  <script>
+    // 「最終更新」をJSTの現在時刻で表示
+    (function(){
+      try{
+        const now = new Date();
+        const fmt = (d)=> new Intl.DateTimeFormat('ja-JP', {
+          timeZone: 'Asia/Tokyo', year:'numeric', month:'2-digit', day:'2-digit',
+          hour:'2-digit', minute:'2-digit', second:'2-digit'
+        }).format(d).replace(/\//g,'-');
+        document.getElementById('updated').textContent = fmt(now) + ' JST';
+        document.getElementById('tz').textContent = '本ページは 2 分ごとに自動更新されます（時刻はJST表示）。';
+      }catch(e){}
+    })();
+  </script>
+</body>
+</html>

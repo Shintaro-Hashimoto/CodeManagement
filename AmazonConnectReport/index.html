@@ -2,52 +2,50 @@
 <html>
 
 <head>
-	<title>Amazon Connect Realtime Report</title>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
-	<link rel="shortcut icon" href="https://aws.amazon.com/favicon.ico" />
-	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-	<link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
-	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css">
-	<link type="text/css" rel="stylesheet" href="css/froala_blocks.css">
-	<link type="text/css" rel="stylesheet" href="css/custom.css">
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-	<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
-	<script type="text/javascript" src="https://sdk.amazonaws.com/js/aws-sdk-2.355.0.min.js"></script>
-	<script type="text/javascript" src="js/index.js"></script>
+    <title>Amazon Connect Realtime Report</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
+    <link rel="shortcut icon" href="https://aws.amazon.com/favicon.ico" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css">
+    
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    
+    <link type="text/css" rel="stylesheet" href="css/froala_blocks.css">
+    <link type="text/css" rel="stylesheet" href="css/custom.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script type="text/javascript" src="https://sdk.amazonaws.com/js/aws-sdk-2.355.0.min.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
 </head>
 
 <body>
-	<!-- Teams 7 -->
-	<div id="wrapper">
-		<section class="fdb-block team-7">
-			<div class="container">
-				<div class="row text-center justify-content-center">
-					<div class="col-8">
-						<h1>Amazon Connect Realtime Report<a id="manual-reload" class="icon_ref glyphicon glyphicon-refresh" aria-hidden="true"></a></h1>
+    <div id="wrapper">
+        <section class="fdb-block team-7">
+            <div class="container">
+                <div class="row text-center justify-content-center">
+                    <div class="col-8">
+                        <h1>Amazon Connect Realtime Report<a id="manual-reload" class="icon_ref glyphicon glyphicon-refresh" aria-hidden="true"></a></h1>
 
-					</div>
-				</div>
+                    </div>
+                </div>
 
-				<div class="row-50"></div>
+                <div class="row-50"></div>
 
-				<script>
-					const url = "./json/status.json";
+                <script>
+                    // このインラインスクリプトは index.js によって上書きされるため、実質的には動作しません。
+                    const url = "./json/status.json";
 
                     $.getJSON(url, data => {
                         var items = [];
                         var lineContainer = '';
-                        //全体カウント
                         var cnt = 1;
-                        //agentのwrap要素divの数
                         var wrapBoxCnt = 0;
-                        //dev.row内のmaxAgent数
                         var agentBoxNum = 3;
-                        //1つのdev.row内のagent数カウント
                         var agentNum = 1;
 
-                        //要素の総数取得
                         var dataNum = 0;
                         for (i in data) {
                             if (data.hasOwnProperty(i)) {
@@ -58,13 +56,9 @@
                         
                         var agentHrcAry = [];
                         
-                        
-                        //statusごとの人数
                         var num_off = 0;
                         var num_on = 0;
 
-
-                        //dataがサーバから受け取るjson値
                         $.each(data, function(key, val) {
                             
                             if(val.status === 0){
@@ -77,18 +71,17 @@
                                 $('<div class="row box' + wrapBoxCnt + '"></div>').appendTo('#item-container');
                             }
 
-                            //agent数が3人まで同一box
                             if (agentNum <= agentBoxNum) {
                                 var agentHrc = '所属：';
                                 if(val.agentHRC){
                                     agentHrc += val.agentHRC;
                                     if($.inArray(val.agentHRC, agentHrcAry) === -1){
-                                       agentHrcAry.push(val.agentHRC);
+                                        agentHrcAry.push(val.agentHRC);
                                     }
                                 }
-								if (!val.connect_status) {
-									val.connect_status = val.status;
-								}
+                                if (!val.connect_status) {
+                                    val.connect_status = val.status;
+                                }
                                 var htm = '';
                                 htm += '<div class="col-sm-3 m-sm-auto status' + val.status + '">';
                                 htm += '<div class="row align-items-center">';
@@ -97,14 +90,12 @@
                                 $(htm).appendTo('#item-container .box' + wrapBoxCnt);
                             }
 
-                            //1つのdev.row内のagent数が3人なら空divを挿入
                             if (agentNum == agentBoxNum) {
                                 $('<div class="row-50"></div>').appendTo('#item-container');
                                 agentNum = 0;
                                 wrapBoxCnt++;
                             }
 
-                            //最後の要素の時、box内agentが3人以下なら空要素で埋める
                             if (cnt == dataNum) {
                                 var cls = '.row.box' + wrapBoxCnt;
                                 for (x = 0; padObjCnt > x; x++) {
@@ -120,68 +111,63 @@
                         $('span.num_1').text(num_on);
                         
                         agentHrcAry.sort();
-                        //絞り込み値作成
                         $.each(agentHrcAry, function(index, value){
                             var htm = '<option value="' + value + '">'+ value +'</option>';
                             $('#sel_agentHrc').append(htm);
                         });
                     });
 
-                    //                const timer = 10000;    // ミリ秒で間隔の時間を指定
-                    //                window.addEventListener('load',function(){
-                    //                  setInterval('location.reload()',timer);
-                    //                });
-
                 </script>
 
-				<div class="row justify-content-end bx_check">
-					<div class='check-container'>
-						<input type='radio' id='one' name='check' value="all" checked>
-						<label for='one'></label>
-						<span class='tag'>ALL(<span class="num_all"></span>)</span>
-					</div>
-					<div class='check-container'>
-						<input type='radio' id='two' name='check' value="0">
-						<label for='two'></label>
-						<span class='tag'>Offline(<span class="num_0"></span>)</span>
-					</div>
-					<div class='check-container ml-3'>
-						<input type='radio' id='three' name='check' value="1">
-						<label for='three'></label>
-						<span class='tag'>Available(<span class="num_1"></span>)</span>
-					</div>
-				</div>
+                <div class="row justify-content-end bx_check">
+                    <div class='check-container'>
+                        <input type='radio' id='one' name='check' value="all" checked>
+                        <label for='one'></label>
+                        <span class='tag'>ALL(<span class="num_all"></span>)</span>
+                    </div>
+                    <div class='check-container'>
+                        <input type='radio' id='two' name='check' value="0">
+                        <label for='two'></label>
+                        <span class='tag'>Offline(<span class="num_0"></span>)</span>
+                    </div>
+                    <div class='check-container ml-3'>
+                        <input type='radio' id='three' name='check' value="1">
+                        <label for='three'></label>
+                        <span class='tag'>Available(<span class="num_1"></span>)</span>
+                    </div>
+                </div>
 
-				<div class="row justify-content-end bx_select">
-					<label for="sel_agentHrc" class="lavel_agentHrc">
-						所属：
-						<select id="sel_agentHrc" name=”address”>
-							<option value="all">ALL</option>
-						</select>
-					</label>
+                <div class="row justify-content-end bx_select">
+                    <label for="sel_agentHrc" class="lavel_agentHrc">
+                        所属：
+                        <select id="sel_agentHrc" name=”address”>
+                            <option value="all">ALL</option>
+                        </select>
+                    </label>
 
-				</div>
+                </div>
 
-				<div class="row-50"></div>
+                <div class="row-50"></div>
 
-				<div id="item-container"></div>
+                <div id="item-container"></div>
 
 
-			</div>
-		</section>
+            </div>
+        </section>
 
-		<!-- Footers 2 -->
-		<footer class="fdb-block footer-small bg-dark">
-			<p class="to-top"><span class="glyphicon glyphicon-circle-arrow-up mr-2" aria-hidden="true"></span>TOP</p>
-			<div class="container">
-				<div class="row text-center">
-					<div class="col">
-						<p>© 2020 APProg, Inc. All Rights Reserved.</p>
-					</div>
-				</div>
-			</div>
-		</footer>
-	</div>
+        <footer class="fdb-block footer-small bg-dark">
+            <p class="to-top"><span class="glyphicon glyphicon-circle-arrow-up mr-2" aria-hidden="true"></span>TOP</p>
+            <div class="container">
+                <div class="row text-center">
+                    <div class="col">
+                        <p>© 2020 APProg, Inc. All Rights Reserved.</p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 </body>
 
 </html>
