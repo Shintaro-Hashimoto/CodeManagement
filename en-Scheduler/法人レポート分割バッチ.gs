@@ -1,10 +1,10 @@
 /**
  * @system enスケジューラ
- * @fileoverview 法人ごとに履歴を分割してスプレッドシートに出力し、Slack API経由で結果を通知する
- * @version 5.5
+ * @fileoverview 法人ごとに履歴を分割し、追加フィールドのJSONを別の専用スプレッドシートに展開する
+ * @version 7.1
  * @author (あなたの名前)
- * @date 2025-09-02
- * @description 出力先をサブフォルダ「法人毎の履歴」に変更
+ * @date 2025-10-10
+ * @description 追加フィールドシートのID列名を「ID」に変更
  */
 
 // ===========================
@@ -15,7 +15,6 @@ function splitHistoryByCorporation_withFormatting() {
   // ▼ 通知のタイトルを設定 ▼
   const SLACK_MESSAGE_TITLE = "【enスケジューラ：法人レポート分割バッチ】";
   
-  // スクリプトプロパティからチャンネルIDを取得
   const SLACK_CHANNEL_ID = PropertiesService.getScriptProperties().getProperty('SLACK_CHANNEL_ID');
 
   if (!SLACK_CHANNEL_ID) {
@@ -24,14 +23,15 @@ function splitHistoryByCorporation_withFormatting() {
   }
 
   let processedCount = 0;
+  let customFieldRecordCount = 0; // ★追加: カスタム項目を処理したレコード件数
   const updatedCorps = new Set();
+  const customFieldSheetsCache = {}; // ★追加: カスタム項目シートの情報をキャッシュ
 
   try {
     const historySheetId = "1_XLImss5Y0kC7ZZKLLK4vjjcImSlc_0wjCDlvouKQUA";
     const corpMapSheetId = "1nukNFft5yE2dyfporzp0UQFgBUXPk83lfNEeWLh0bQA";
-    // ★修正点①: 親フォルダのIDと、目的のサブフォルダ名を設定
-    const parentFolderId = "1l5MT7BO4vz4siWF7HMBoXtiGAGyKlwxR"; // 親フォルダ「ログデータ」のID
-    const subFolderName = "法人毎の履歴"; // 保存したいサブフォルダ名
+    const parentFolderId = "1l5MT7BO4vz4siWF7HMBoXtiGAGyKlwxR";
+    const subFolderName = "法人毎の履歴";
 
     const historySS = SpreadsheetApp.openById(historySheetId);
     const corpMapSS = SpreadsheetApp.openById(corpMapSheetId);
@@ -52,27 +52,31 @@ function splitHistoryByCorporation_withFormatting() {
     const displayRecords = displayData.slice(1);
 
     let idColIndex = header.indexOf("ID");
+    const customFieldIndex = header.indexOf("追加フィールド");
+
     if (idColIndex === -1) {
       idColIndex = header.length;
       historySheet.getRange(1, idColIndex + 1).setValue("ID");
       header.push("ID");
     }
 
-    // ★修正点②: 親フォルダの中からサブフォルダを取得、なければ作成
     const parentFolder = DriveApp.getFolderById(parentFolderId);
     let outputFolder;
     const subFolders = parentFolder.getFoldersByName(subFolderName);
     if (subFolders.hasNext()) {
-        outputFolder = subFolders.next(); // 既存のサブフォルダを使用
+        outputFolder = subFolders.next();
     } else {
-        outputFolder = parentFolder.createFolder(subFolderName); // サブフォルダを新規作成
+        outputFolder = parentFolder.createFolder(subFolderName);
         Logger.log(`サブフォルダ「${subFolderName}」を作成しました。`);
     }
 
     records.forEach((row, i) => {
       const rowNum = i + 2;
-      const idValue = historySheet.getRange(rowNum, idColIndex + 1).getValue();
-      if (idValue !== "") return;
+      let uuid = historySheet.getRange(rowNum, idColIndex + 1).getValue();
+      if (uuid !== "") return;
+
+      uuid = Utilities.getUuid();
+      historySheet.getRange(rowNum, idColIndex + 1).setValue(uuid);
 
       processedCount++;
       const facilityIndex = header.indexOf("施設名");
@@ -80,23 +84,77 @@ function splitHistoryByCorporation_withFormatting() {
       const corpName = facilityToCorp[facility] || "未登録施設";
       updatedCorps.add(corpName);
 
-      const fileName = `法人レポート_${corpName}`;
-      // ★修正点③: 取得したサブフォルダを保存先として渡す
-      const targetSS = getOrCreateSpreadsheetInFolder(fileName, outputFolder);
-      const targetSheet = getOrCreateSheet(targetSS, "履歴");
+      // --- 1. 履歴データの処理 ---
+      const historyFileName = `法人レポート_${corpName}`;
+      const historyTargetSS = getOrCreateSpreadsheetInFolder(historyFileName, outputFolder);
+      const historyTargetSheet = getOrCreateSheet(historyTargetSS, "履歴");
 
-      if (targetSheet.getLastRow() === 0) {
-        targetSheet.appendRow(header);
+      if (historyTargetSheet.getLastRow() === 0) {
+        historyTargetSheet.appendRow(header);
       }
 
-      const uuid = Utilities.getUuid();
       const formattedRow = formatDatesInRow(row, header, displayRecords[i]);
-      while (formattedRow.length < header.length) {
-        formattedRow.push("");
-      }
+      while (formattedRow.length < header.length) { formattedRow.push(""); }
       formattedRow[idColIndex] = uuid;
-      targetSheet.appendRow(formattedRow);
-      historySheet.getRange(rowNum, idColIndex + 1).setValue(uuid);
+      historyTargetSheet.appendRow(formattedRow);
+
+      // --- 2. カスタム項目データ(JSON)の処理 ---
+      if (customFieldIndex !== -1 && row[customFieldIndex]) {
+        try {
+          const customData = JSON.parse(row[customFieldIndex]);
+          if (Object.keys(customData).length === 0) return; // 空のJSONはスキップ
+
+          customFieldRecordCount++;
+
+          // 法人ごとのカスタム項目シート情報をキャッシュから取得 or 新規作成
+          if (!customFieldSheetsCache[corpName]) {
+            const customFileName = `法人レポート_${corpName}_追加フィールド項目`;
+            const customSS = getOrCreateSpreadsheetInFolder(customFileName, outputFolder);
+            const customSheet = getOrCreateSheet(customSS, "追加フィールド");
+            let customHeader = [];
+            if (customSheet.getLastRow() > 0) {
+              customHeader = customSheet.getRange(1, 1, 1, customSheet.getLastColumn()).getValues()[0];
+            } else {
+              // ★修正点: ヘッダー名を「予約ID」から「ID」に変更
+              customHeader = ["ID"];
+              customSheet.appendRow(customHeader);
+            }
+            customFieldSheetsCache[corpName] = { sheet: customSheet, header: customHeader };
+          }
+          
+          const cache = customFieldSheetsCache[corpName];
+          const customSheet = cache.sheet;
+          let customHeader = cache.header;
+          
+          let headerNeedsUpdate = false;
+          const newRowData = new Array(customHeader.length).fill("");
+          newRowData[0] = uuid;
+
+          for (const question in customData) {
+            const answer = customData[question];
+            let questionIndex = customHeader.indexOf(question);
+            
+            if (questionIndex === -1) {
+              // 新しい質問（列）が見つかった場合
+              questionIndex = customHeader.length;
+              customHeader.push(question);
+              newRowData.push(""); // 新しい列の分だけ配列を拡張
+              headerNeedsUpdate = true;
+            }
+            newRowData[questionIndex] = answer;
+          }
+          
+          // ヘッダーが更新された場合、シートに書き込む
+          if (headerNeedsUpdate) {
+            customSheet.getRange(1, 1, 1, customHeader.length).setValues([customHeader]);
+          }
+          
+          customSheet.appendRow(newRowData);
+
+        } catch(e) {
+          Logger.log(`行 ${rowNum} のJSON解析エラー: ${e.message} - データ: ${row[customFieldIndex]}`);
+        }
+      }
     });
 
     // --- 処理終了後の通知 ---
@@ -107,7 +165,7 @@ function splitHistoryByCorporation_withFormatting() {
       postHybridMessage(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "情報", summaryMessage);
     } else {
       const updatedFilesList = Array.from(updatedCorps).map(corpName => `✅${corpName}`).join('\n');
-      summaryMessage = `処理が完了しました。\n✅新規処理件数: ${processedCount} 件\n【更新/作成ファイル】\n${updatedFilesList}`;
+      summaryMessage = `処理が完了しました。\n✅新規処理件数: ${processedCount} 件 (うちカスタム項目あり: ${customFieldRecordCount} 件)\n【更新/作成ファイル】\n${updatedFilesList}`;
       Logger.log(summaryMessage);
       postHybridMessage(SLACK_CHANNEL_ID, SLACK_MESSAGE_TITLE, "正常終了", summaryMessage);
     }
@@ -120,16 +178,9 @@ function splitHistoryByCorporation_withFormatting() {
 }
 
 // ===========================
-// ユーティリティ関数
+// ユーティリティ関数（変更なし）
 // ===========================
 
-/**
- * Block KitとAttachmentsを組み合わせたハイブリッド形式で通知を送信する
- * @param {string} channelId - 投稿先のチャンネルID
- * @param {string} title - 通知のタイトル
- * @param {string} status - 実行ステータス
- * @param {string} details - 詳細メッセージ
- */
 function postHybridMessage(channelId, title, status, details) {
   const botToken = PropertiesService.getScriptProperties().getProperty('SLACK_BOT_TOKEN');
   if (!botToken) {
@@ -154,36 +205,14 @@ function postHybridMessage(channelId, title, status, details) {
       {
         "color": color,
         "blocks": [
-          {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": `*${shortTitle}*`
-            }
-          },
-          {
-            "type": "section",
-            "fields": [
-              {
-                "type": "mrkdwn",
-                "text": `*実行日時:*\n${executionTime}`
-              },
-              {
-                "type": "mrkdwn",
-                "text": `*ステータス:*\n${statusText}`
-              }
+          { "type": "section", "text": { "type": "mrkdwn", "text": `*${shortTitle}*` } },
+          { "type": "section", "fields": [
+              { "type": "mrkdwn", "text": `*実行日時:*\n${executionTime}` },
+              { "type": "mrkdwn", "text": `*ステータス:*\n${statusText}` }
             ]
           },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "*詳細:*\n```" + details + "```"
-            }
-          }
+          { "type": "divider" },
+          { "type": "section", "text": { "type": "mrkdwn", "text": "*詳細:*\n```" + details + "```" } }
         ]
       }
     ]
@@ -192,9 +221,7 @@ function postHybridMessage(channelId, title, status, details) {
   const options = {
     'method': 'post',
     'contentType': 'application/json',
-    'headers': {
-      'Authorization': 'Bearer ' + botToken
-    },
+    'headers': { 'Authorization': 'Bearer ' + botToken },
     'payload': JSON.stringify(payload)
   };
   try {
@@ -204,9 +231,6 @@ function postHybridMessage(channelId, title, status, details) {
   }
 }
 
-/**
- * 日付整形ユーティリティ関数
- */
 function formatDatesInRow(row, header, displayRow) {
   if (!Array.isArray(row) || !Array.isArray(displayRow)) {
     throw new Error("formatDatesInRow: 無効な行データが渡されました。");
@@ -226,9 +250,6 @@ function formatDatesInRow(row, header, displayRow) {
   return formatted;
 }
 
-/**
- * ファイル／シート操作系ユーティリティ関数
- */
 function getOrCreateSpreadsheetInFolder(fileName, folder) {
   const files = folder.getFilesByName(fileName);
   if (files.hasNext()) {
