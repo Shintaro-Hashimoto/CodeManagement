@@ -1,10 +1,10 @@
 /**
  * @system enスケジューラ
  * @fileoverview 法人ごとに履歴を分割し、追加フィールドのJSONを別の専用スプレッドシートに展開する
- * @version 7.1
+ * @version 7.2
  * @author (あなたの名前)
  * @date 2025-10-10
- * @description 追加フィールドシートのID列名を「ID」に変更
+ * @description 追加フィールド内の配列データを文字列に変換して文字化けを修正
  */
 
 // ===========================
@@ -23,9 +23,9 @@ function splitHistoryByCorporation_withFormatting() {
   }
 
   let processedCount = 0;
-  let customFieldRecordCount = 0; // ★追加: カスタム項目を処理したレコード件数
+  let customFieldRecordCount = 0;
   const updatedCorps = new Set();
-  const customFieldSheetsCache = {}; // ★追加: カスタム項目シートの情報をキャッシュ
+  const customFieldSheetsCache = {};
 
   try {
     const historySheetId = "1_XLImss5Y0kC7ZZKLLK4vjjcImSlc_0wjCDlvouKQUA";
@@ -102,11 +102,10 @@ function splitHistoryByCorporation_withFormatting() {
       if (customFieldIndex !== -1 && row[customFieldIndex]) {
         try {
           const customData = JSON.parse(row[customFieldIndex]);
-          if (Object.keys(customData).length === 0) return; // 空のJSONはスキップ
+          if (Object.keys(customData).length === 0) return;
 
           customFieldRecordCount++;
 
-          // 法人ごとのカスタム項目シート情報をキャッシュから取得 or 新規作成
           if (!customFieldSheetsCache[corpName]) {
             const customFileName = `法人レポート_${corpName}_追加フィールド項目`;
             const customSS = getOrCreateSpreadsheetInFolder(customFileName, outputFolder);
@@ -115,7 +114,6 @@ function splitHistoryByCorporation_withFormatting() {
             if (customSheet.getLastRow() > 0) {
               customHeader = customSheet.getRange(1, 1, 1, customSheet.getLastColumn()).getValues()[0];
             } else {
-              // ★修正点: ヘッダー名を「予約ID」から「ID」に変更
               customHeader = ["ID"];
               customSheet.appendRow(customHeader);
             }
@@ -131,20 +129,26 @@ function splitHistoryByCorporation_withFormatting() {
           newRowData[0] = uuid;
 
           for (const question in customData) {
-            const answer = customData[question];
+            let answer = customData[question];
+            
+            // ★★★★★ 修正点 ★★★★★
+            // answerが配列の場合、nullを除外して文字列に変換
+            if (Array.isArray(answer)) {
+              answer = answer.filter(item => item != null).join(', ');
+            }
+            // ★★★★★★★★★★★★★★★
+            
             let questionIndex = customHeader.indexOf(question);
             
             if (questionIndex === -1) {
-              // 新しい質問（列）が見つかった場合
               questionIndex = customHeader.length;
               customHeader.push(question);
-              newRowData.push(""); // 新しい列の分だけ配列を拡張
+              newRowData.push("");
               headerNeedsUpdate = true;
             }
             newRowData[questionIndex] = answer;
           }
           
-          // ヘッダーが更新された場合、シートに書き込む
           if (headerNeedsUpdate) {
             customSheet.getRange(1, 1, 1, customHeader.length).setValues([customHeader]);
           }
