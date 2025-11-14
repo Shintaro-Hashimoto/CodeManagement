@@ -1,0 +1,539 @@
+/*
+Theme Name: kidsplus-theme
+Description: KIDS PLUS オリジナルテーマ
+Version: 1.0
+*/
+
+/* ========== 共通 ========== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, Helvetica, Arial, "Yu Gothic", "メイリオ", sans-serif;
+  background: #f6f7fb;
+  color: #222;
+  line-height: 1.7;
+}
+
+a {
+  color: #0080ff;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ========== グローバルヘッダー ========== */
+
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #ffffffdd;
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.site-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.site-logo a {
+  display: inline-flex;
+  align-items: center;
+}
+
+.site-logo img {
+  display: block;
+  height: 42px;
+}
+
+/* PC ナビ */
+.global-nav {
+  display: flex;
+}
+.global-nav ul {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.global-nav a {
+  color: #333;
+}
+.global-nav a:hover {
+  opacity: 0.7;
+}
+
+/* ハンバーガー */
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem;
+}
+.menu-toggle span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #333;
+  border-radius: 999px;
+  margin: 4px 0;
+}
+
+/* ========== HERO ========== */
+
+.hero {
+  position: relative;
+  min-height: 75vh;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6rem 1rem 2rem; /* 固定ヘッダー分を考慮して上を多めに */
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* ★ 画像が必ず出るように絶対パス指定に変更 */
+  background: url("/wp-content/themes/kidsplus-theme/assets/hero.jpg") center/cover no-repeat;
+  filter: brightness(0.6);
+}
+
+.hero .inner {
+  position: relative;
+  z-index: 2;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.lead {
+  font-size: 1rem;
+  max-width: 680px;
+  margin: 0 auto 1.5rem;
+}
+
+.hero-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.btn {
+  padding: 0.7rem 1.5rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: 2px solid #fff;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+.btn.primary {
+  background: #ff4b8b;
+  border-color: #ff4b8b;
+}
+
+/* ========== 3サービスカード（カラフルな3枚） ========== */
+
+.services {
+  max-width: 1100px;
+  margin: -3rem auto 3rem;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  /* align-items: stretch; */ /* ★ 効かないため削除 */
+}
+
+.service-card {
+  padding: 1.6rem;
+  border-radius: 14px;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  /* display: flex; */ /* ★ 効かないため削除 */
+  /* flex-direction: column; */ /* ★ 効かないため削除 */
+  min-height: 200px; /* ★ 修正：一番高いものに高さを合わせる（200pxに設定） */
+}
+
+.service-card h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.1rem;
+}
+
+.service-card p {
+  font-size: 0.9rem;
+  margin-bottom: 0.8rem;
+  /* flex-grow: 1; */ /* ★ 効かないため削除 */
+}
+
+.service-card a {
+  color: #fff;            /* 「詳しく見る」を白に */
+  font-weight: 600;
+}
+.service-card a:hover {
+  text-decoration: underline;
+}
+
+.svc-kidsplus {
+  background: #9b4de3;
+}
+.svc-en {
+  background: #00a0ff;
+}
+.svc-english {
+  background: #26b269;
+}
+
+/* ========== 共通レイアウト ========== */
+
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.5rem 1rem 4rem;
+}
+
+section {
+  margin-bottom: 3.5rem;
+}
+
+/* ========== ビジョンセクション（人とTechnologyで…） ========== */
+
+#vision {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.vision-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.vision-layout > * {
+  max-width: 100%;
+}
+
+.vision-image img {
+  width: 100%;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+/* ========== サービス詳細（3つの説明セクション） ========== */
+
+.service-detail {
+  background: #fff;
+  padding: 2.6rem 2.4rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.06);
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 2.5rem;
+  align-items: stretch;
+  min-height: 340px; /* 高さをそろえ気味に */
+}
+
+.service-detail > div:first-child:not(:has(img)),
+.service-detail > div:last-child:not(:has(img)) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* セクション同士の間隔を広めに */
+#kidsplus,
+#en,
+#english {
+  margin-bottom: 5rem;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.tag {
+  display: inline-block;
+  color: #fff;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  margin-bottom: 0.6rem;
+}
+
+.tag-kidsplus {
+  background: #9b4de3;
+}
+.tag-en {
+  background: #00a0ff;
+}
+.tag-english {
+  background: #26b269;
+}
+
+/* ★ 修正： .tag-english のセレクタ詳細度を上げて強制上書き */
+#english .tag.tag-english {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.service-detail img {
+  width: 100%;
+  border-radius: 10px;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ========== フッター ========== */
+
+.site-footer {
+  background: #111319;
+  color: #ddd;
+  padding: 2rem 1rem;
+  font-size: 0.85rem;
+  margin-top: 4rem;
+}
+
+.site-footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.site-footer a {
+  color: #3aa7ff;
+}
+
+/* ========== 固定ページ用（会社概要・プライバシーなど） ========== */
+
+.page-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 6rem 1rem 4rem; /* ヘッダー分を考慮して上を広めに */
+}
+
+.page-box {
+  max-width: 900px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 2rem 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* ===== 固定ページ内のコンテンツスタイル（統合済み）===== */
+.page-box h1 {
+  font-size: 1.9rem;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.page-box h2 {
+  font-size: 1.4rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+.page-box h3 {
+  font-size: 1.2rem;
+  margin-top: 2rem;
+  margin-bottom: 0.8rem;
+  line-height: 1.4;
+}
+.page-box p,
+.page-box ul,
+.page-box ol {
+  line-height: 1.8;
+  margin-bottom: 1rem;
+}
+.page-box ul,
+.page-box ol {
+  padding-left: 1.5rem; 
+}
+.page-box p a {
+  color: #0080ff;
+  text-decoration: underline;
+}
+.page-box p a:hover {
+  opacity: 0.7;
+}
+
+/* テーブルスタイル */
+.page-box table {
+  width: 100%;
+  border-collapse: collapse;
+  line-height: 1.8;
+  margin-top: 1rem;
+}
+.page-box table td {
+  padding: 8px 4px;
+  border-bottom: 1px solid #eee;
+  vertical-align: top;
+}
+.page-box table td:first-child {
+  font-weight: 600;
+  width: 30%;
+  padding-right: 1rem;
+}
+
+/* ========== お問い合わせページ（iframe）調整 ========== */
+.page-box iframe {
+  display: block;
+  margin: 0 auto;    /* ★ iframeを中央揃えにする */
+  max-width: 100%;   /* ★ 親要素(page-box)からはみ出さないように */
+  min-height: 900px; /* ★ フォームの高さに合わせて調整してください */
+  border: none;      /* ★ 枠線を消す */
+}
+
+
+/* ========== レスポンシブ ========== */
+
+/* テーブルのスマホ表示 (600px以下) */
+@media (max-width: 600px) {
+  .page-box table,
+  .page-box table tbody,
+  .page-box table tr,
+  .page-box table td {
+    display: block;
+    width: 100%;
+  }
+  .page-box table tr {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+  }
+  .page-box table td {
+    padding: 2px 0;
+    border-bottom: none;
+  }
+  .page-box table td:first-child {
+    font-weight: 600;
+    width: 100%;
+    padding-top: 0.5rem;
+  }
+}
+
+/* サイト全体のスマホ表示 (900px以下) */
+@media (max-width: 900px) {
+  .services {
+    grid-template-columns: 1fr;
+  }
+  
+  /* ★ 修正：min-heightをリセット */
+  .service-card {
+    min-height: auto;
+  }
+
+  #vision,
+  #kidsplus,
+  #en,
+  #english {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .vision-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .service-detail {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 2rem 1.5rem;
+    align-items: center;
+  }
+
+  .service-detail img {
+    height: auto;
+    object-fit: contain;
+  }
+
+  .site-header-inner {
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* ナビはハンバーガーに */
+  .menu-toggle {
+    display: block;
+  }
+  .global-nav {
+    display: none;
+    position: absolute;
+    top: 56px;
+    right: 0;
+    left: 0;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .global-nav ul {
+    flex-direction: column;
+    padding: 0.75rem 1rem 1rem;
+    gap: 0.75rem;
+  }
+  .global-nav.is-open {
+    display: block;
+  }
+
+  /* 固定ページの余白調整 */
+  .page-box {
+    padding: 1.5rem 1.1rem;
+  }
+  
+  /* お問い合わせiframeの調整(SP) */
+  .page-box iframe {
+    min-height: 1000px; /* スマホではフォームが縦長になるため高さを増やす */
+  }
+
+  /* SP時にフッターを縦積みに */
+  .site-footer-inner {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+}
