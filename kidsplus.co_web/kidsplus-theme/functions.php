@@ -27,7 +27,7 @@ function kidsplus_enqueue_assets() {
     'kidsplus-style',
     get_stylesheet_uri(),
     [],
-    '1.3' /* ★ バージョンを 1.3 に変更（キャッシュ対策） */
+    '1.5' /* ★ バージョンを 1.5 に変更（キャッシュ対策） */
   );
 
   // JavaScript (js/main.js) を読み込む（追加）
@@ -35,7 +35,7 @@ function kidsplus_enqueue_assets() {
     'kidsplus-main',
     get_template_directory_uri() . '/js/main.js',
     [],    // S
-    '1.3', /* ★ バージョンを 1.3 に変更（キャッシュ対策） */
+    '1.5', /* ★ バージョンを 1.5 に変更（キャッシュ対策） */
     true   // trueにすると </body> 直前で読み込む
   );
 }

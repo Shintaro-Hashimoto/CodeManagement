@@ -176,7 +176,7 @@ img {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
-  /* align-items: stretch; */ /* ★ 効かないため削除 */
+  /* align-items: stretch; */ /* ★ 削除 */
 }
 
 .service-card {
@@ -184,9 +184,9 @@ img {
   border-radius: 14px;
   color: #fff;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
-  /* display: flex; */ /* ★ 効かないため削除 */
-  /* flex-direction: column; */ /* ★ 効かないため削除 */
-  min-height: 200px; /* ★ 修正：一番高いものに高さを合わせる（200pxに設定） */
+  /* display: flex; */ /* ★ 削除 */
+  /* flex-direction: column; */ /* ★ 削除 */
+  min-height: 190px; /* ★ 修正：高さを直接指定（一番高いKIDS PLUSに合わせる） */
 }
 
 .service-card h3 {
@@ -197,7 +197,7 @@ img {
 .service-card p {
   font-size: 0.9rem;
   margin-bottom: 0.8rem;
-  /* flex-grow: 1; */ /* ★ 効かないため削除 */
+  /* flex-grow: 1; */ /* ★ 削除 */
 }
 
 .service-card a {
@@ -268,7 +268,7 @@ section {
   grid-template-columns: 1.05fr 0.95fr;
   gap: 2.5rem;
   align-items: stretch;
-  min-height: 340px; /* 高さをそろえ気味に */
+  min-height: 500px; /* ★ お客様の修正値を反映 */
 }
 
 .service-detail > div:first-child:not(:has(img)),
@@ -315,10 +315,10 @@ section {
   background: #26b269;
 }
 
-/* ★ 修正： .tag-english のセレクタ詳細度を上げて強制上書き */
+/* ★ 修正： !important を追加して強制上書き */
 #english .tag.tag-english {
-  font-size: 0.75rem;
-  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem !important;
+  padding: 0.2rem 0.5rem !important;
 }
 
 .service-detail img {
@@ -366,6 +366,22 @@ section {
   padding: 2rem 1.5rem;
   border-radius: 16px;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* ========== 固定ページのアイキャッチ画像 ========== */
+.page-eyecatch {
+  margin: -2rem -1.5rem 2rem -1.5rem; 
+  max-width: calc(100% + 3rem);
+  overflow: hidden;
+}
+.page-eyecatch img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  border-radius: 16px 16px 0 0;
+}
+.page-eyecatch + h1 {
+  margin-top: 0;
 }
 
 /* ===== 固定ページ内のコンテンツスタイル（統合済み）===== */
@@ -466,9 +482,8 @@ section {
     grid-template-columns: 1fr;
   }
   
-  /* ★ 修正：min-heightをリセット */
   .service-card {
-    min-height: auto;
+    min-height: auto; /* スマホでは高さ自動 */
   }
 
   #vision,
@@ -526,6 +541,16 @@ section {
     padding: 1.5rem 1.1rem;
   }
   
+  /* 固定ページアイキャッチ(SP) */
+  .page-eyecatch {
+    margin: -1.5rem -1.1rem 1.5rem -1.1rem;
+    max-width: calc(100% + 2.2rem);
+    height: 180px; /* スマホでは高さを低めに */
+  }
+  .page-eyecatch img {
+    height: 100%;
+  }
+
   /* お問い合わせiframeの調整(SP) */
   .page-box iframe {
     min-height: 1000px; /* スマホではフォームが縦長になるため高さを増やす */
