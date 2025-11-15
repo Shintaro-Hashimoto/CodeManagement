@@ -70,6 +70,11 @@ get_header();
       <p>
         先生・保護者が安心してつながれる環境を整え、日々のコミュニケーションをスムーズにします。
       </p>
+      <div class="service-btn-wrap">
+        <a href="https://www.kidsplus.me" target="_blank" rel="noopener" class="service-text-link">
+          サービスサイトを見る
+        </a>
+      </div>
     </div>
     <div>
       <img src="<?php echo get_template_directory_uri(); ?>/assets/kidsplus.png" alt="KIDS PLUS イメージ">
@@ -91,6 +96,11 @@ get_header();
       <p>
         カレンダー連携による自動日程調整で、園見学・面談の予約をスムーズに確定できます。
       </p>
+      <div class="service-btn-wrap">
+        <a href="https://www.en-scheduler.com" target="_blank" rel="noopener" class="service-text-link">
+          サービスサイトを見る
+        </a>
+      </div>
     </div>
   </div>
 </section>
@@ -106,6 +116,11 @@ get_header();
       <p>
         ネイティブ講師による担任制レッスンで、自然に英語を好きになる体験を提供します。
       </p>
+      <div class="service-btn-wrap">
+        <a href="https://www.kidsplus.school" target="_blank" rel="noopener" class="service-text-link">
+          サービスサイトを見る
+        </a>
+      </div>
     </div>
     <div>
       <img src="<?php echo get_template_directory_uri(); ?>/assets/english.png" alt="KIDS PLUS english イメージ">

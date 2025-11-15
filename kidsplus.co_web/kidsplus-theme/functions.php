@@ -14,7 +14,7 @@ function kidsplus_setup() {
   // ★ アイキャッチ画像を使えるようにする
   add_theme_support('post-thumbnails');
 }
-add_action('after-setup_theme', 'kidsplus_setup');
+add_action('after_setup_theme', 'kidsplus_setup');
 
 
 /* ---------------------------------------------
@@ -27,7 +27,7 @@ function kidsplus_enqueue_assets() {
     'kidsplus-style',
     get_stylesheet_uri(),
     [],
-    '1.7' /* ★ バージョンを 1.7 に変更（キャッシュ対策） */
+    '1.9' /* ★ バージョンを 1.9 に変更（キャッシュ対策） */
   );
 
   // JavaScript (js/main.js) を読み込む（追加）
@@ -35,7 +35,7 @@ function kidsplus_enqueue_assets() {
     'kidsplus-main',
     get_template_directory_uri() . '/js/main.js',
     [],    // S
-    '1.7', /* ★ バージョンを 1.7 に変更（キャッシュ対策） */
+    '1.9', /* ★ バージョンを 1.9 に変更（キャッシュ対策） */
     true   // trueにすると </body> 直前で読み込む
   );
 }

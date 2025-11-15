@@ -63,7 +63,7 @@ img {
 
 .site-logo img {
   display: block;
-  height: 48px; /* ★ 修正：ロゴを 42px から 48px に拡大 */
+  height: 48px; /* ロゴを 48px に拡大 */
 }
 
 /* PC ナビ */
@@ -176,7 +176,7 @@ img {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
-  align-items: stretch; /* ★ 修正：高さを揃える */
+  align-items: stretch; /* ★ 高さを揃える */
 }
 
 .service-card {
@@ -184,9 +184,8 @@ img {
   border-radius: 14px;
   color: #fff;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
-  display: flex; /* ★ 修正：高さを揃える */
-  flex-direction: column; /* ★ 修正：高さを揃える */
-  /* min-height: 190px; */ /* ★ 削除：flexで揃えるため不要 */
+  display: flex; /* ★ 高さを揃える */
+  flex-direction: column; /* ★ 高さを揃える */
 }
 
 .service-card h3 {
@@ -197,7 +196,7 @@ img {
 .service-card p {
   font-size: 0.9rem;
   margin-bottom: 0.8rem;
-  flex-grow: 1; /* ★ 修正：高さを揃える */
+  flex-grow: 1; /* ★ 高さを揃える */
 }
 
 .service-card a {
@@ -268,7 +267,7 @@ section {
   grid-template-columns: 1.05fr 0.95fr;
   gap: 2.5rem;
   align-items: stretch;
-  min-height: 400px; /* ★ お客様の修正値(400px)を反映 */
+  min-height: 400px; /* お客様の修正値(400px)を反映 */
 }
 
 .service-detail > div:first-child:not(:has(img)),
@@ -299,10 +298,11 @@ section {
 .tag {
   display: inline-block;
   color: #fff;
-  font-size: 0.75rem; /* ★ 修正：タグを小さく */
-  padding: 0.2rem 0.4rem; /* ★ 修正：タグを短く */
+  font-size: 0.75rem; /* ★ タグを小さく */
+  padding: 0.2rem 0.4rem; /* ★ タグを短く */
   border-radius: 999px;
   margin-bottom: 0.6rem;
+  align-self: flex-start; /* ★ タグが伸びないように */
 }
 
 .tag-kidsplus {
@@ -315,7 +315,6 @@ section {
   background: #26b269;
 }
 
-/* ★ 修正：!important指定を削除（.tag 側で統一したため）*/
 #english .tag.tag-english {
   /* .tag の指定がそのまま適用されます */
 }
@@ -448,6 +447,31 @@ section {
   border: none;      /* ★ 枠線を消す */
 }
 
+/* サービス詳細のボタンラップ */
+.service-btn-wrap {
+  margin-top: 1.5rem;
+  align-self: flex-start;
+}
+
+/* テキストリンクのスタイル */
+.service-text-link {
+  color: #ff4b8b; /* サイトのキーカラー */
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+.service-text-link:hover {
+  text-decoration: underline;
+}
+
+/* ★ 修正：外部リンクアイコンをCSSで追加 */
+.service-text-link::after {
+  content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="0.8em" height="0.8em" viewBox="0 0 16 16" fill="%23ff4b8b"><path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/><path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/></svg>');
+  display: inline-block;
+  margin-left: 0.3em;
+  vertical-align: middle;
+}
+
 
 /* ========== レスポンシブ ========== */
 
@@ -510,6 +534,10 @@ section {
     object-fit: contain;
     object-position: center;
   }
+  
+  .site-logo img {
+    height: 42px; /* ★ スマホではロゴを 42px に戻す */
+  }
 
   .site-header-inner {
     padding: 0.5rem 0.75rem;
@@ -562,10 +590,4 @@ section {
     flex-direction: column;
     gap: 1.5rem;
   }
-}
-
-/* カラータグが横に伸びないようにする */
-.tag {
-  display: inline-block;
-  align-self: flex-start; /* ★これがポイント！ */
 }
