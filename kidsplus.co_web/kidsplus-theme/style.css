@@ -441,10 +441,10 @@ section {
 /* ========== お問い合わせページ（iframe）調整 ========== */
 .page-box iframe {
   display: block;
-  margin: 0 auto;    /* ★ iframeを中央揃えにする */
-  max-width: 100%;   /* ★ 親要素(page-box)からはみ出さないように */
-  min-height: 900px; /* ★ フォームの高さに合わせて調整してください */
-  border: none;      /* ★ 枠線を消す */
+  width: 100%; /* ★ 修正：max-width から width に変更 */
+  margin: 0;   /* ★ 修正：中央揃えを解除 */
+  min-height: 850px;
+  border: none;
 }
 
 /* サービス詳細のボタンラップ */
@@ -464,12 +464,22 @@ section {
   text-decoration: underline;
 }
 
-/* ★ 修正：外部リンクアイコンをCSSで追加 */
+/* 外部リンクアイコンをCSSで追加 */
 .service-text-link::after {
   content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="0.8em" height="0.8em" viewBox="0 0 16 16" fill="%23ff4b8b"><path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/><path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/></svg>');
   display: inline-block;
   margin-left: 0.3em;
   vertical-align: middle;
+}
+
+/* 追記：ISMS認証ロゴのスタイル */
+.page-box .isms-logo {
+  display: block;
+  width: 200px; /* 画像の幅（お好みで調整してください） */
+  max-width: 100%;
+  height: auto;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 
@@ -583,6 +593,7 @@ section {
   /* お問い合わせiframeの調整(SP) */
   .page-box iframe {
     min-height: 1000px; /* スマホではフォームが縦長になるため高さを増やす */
+    width: 100%;
   }
 
   /* SP時にフッターを縦積みに */
