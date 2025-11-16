@@ -153,6 +153,7 @@ img {
 }
 
 .btn {
+  display: inline-block; /* ボタンとして振る舞う */
   padding: 0.7rem 1.5rem;
   border-radius: 999px;
   font-size: 0.95rem;
@@ -161,6 +162,7 @@ img {
   background: rgba(0, 0, 0, 0.25);
   color: #fff;
   backdrop-filter: blur(4px);
+  text-align: center; /* ボタン内のテキストを中央揃え */
 }
 .btn.primary {
   background: #ff4b8b;
@@ -441,8 +443,8 @@ section {
 /* ========== お問い合わせページ（iframe）調整 ========== */
 .page-box iframe {
   display: block;
-  width: 100%; /* ★ 修正：max-width から width に変更 */
-  margin: 0;   /* ★ 修正：中央揃えを解除 */
+  width: 100%;
+  margin: 0;
   min-height: 850px;
   border: none;
 }
@@ -475,15 +477,117 @@ section {
 /* 追記：ISMS認証ロゴのスタイル */
 .page-box .isms-logo {
   display: block;
-  width: 200px; /* 画像の幅（お好みで調整してください） */
+  width: 200px; /* スマホ版のデフォルトサイズ */
   max-width: 100%;
   height: auto;
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
+/* 404ページ用のスタイル */
+.page-404 {
+  text-align: center;
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+.page-404-title {
+  font-size: clamp(3rem, 10vw, 5rem);
+  font-weight: 700;
+  color: #ccc;
+  margin-bottom: 1rem;
+  line-height: 1;
+}
+.page-404-message {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+.page-404-button {
+  margin-top: 2rem;
+}
+.page-404 .btn.primary {
+  background: #ff4b8b;
+  border-color: #ff4b8b;
+  color: #fff;
+  padding: 0.8rem 1.5rem; /* 2行表示用にパディング調整 */
+}
+.page-404 .btn.primary:hover {
+  background: #e6397a;
+  border-color: #e6397a;
+}
+/* 404ページ - 段落の英語テキスト */
+.page-404 p .en {
+  display: block;
+  font-size: 0.85em;
+  color: #666;
+  margin-top: 0.2em;
+}
+/* 404ページ - ボタン内のテキストスタイル */
+.page-404 .btn .ja {
+  display: block; /* 1行目 */
+  font-weight: 600;
+  line-height: 1.2;
+  font-size: 0.95rem;
+}
+.page-404 .btn .en {
+  display: block; /* 2行目 */
+  font-size: 0.8em;
+  font-weight: 400;
+  line-height: 1.2;
+  opacity: 0.85;
+  margin-top: 0.1em;
+  color: #fff;
+}
+/* 404ページ - アイコン */
+.icon-404 {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1.5rem;
+  background: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff4b8b"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>') center/contain no-repeat;
+  filter: saturate(1.5) brightness(0.9);
+}
+
+/* フッターSNS */
+.footer-social {
+  text-align: left;
+}
+.footer-social a {
+  color: #3aa7ff;
+  text-decoration: none;
+}
+.footer-social a:hover {
+  text-decoration: underline;
+}
+.footer-sns-icons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+.footer-sns-icons a {
+  display: inline-block;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  color: #ddd;
+}
+.footer-sns-icons a:hover {
+  opacity: 1;
+  text-decoration: none;
+}
+.footer-sns-icons svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
 
 /* ========== レスポンシブ ========== */
+
+/* PC表示時 (901px以上) のみ適用 */
+@media (min-width: 901px) {
+  .page-box .isms-logo {
+    width: 300px; /* PC版では300pxに拡大 */
+  }
+}
 
 /* テーブルのスマホ表示 (600px以下) */
 @media (max-width: 600px) {
@@ -508,6 +612,9 @@ section {
     width: 100%;
     padding-top: 0.5rem;
   }
+  .page-404 p br.sp-only {
+    display: none;
+  }
 }
 
 /* サイト全体のスマホ表示 (900px以下) */
@@ -517,7 +624,7 @@ section {
   }
   
   .service-card {
-    min-height: auto; /* スマホでは高さ自動 */
+    min-height: auto;
   }
 
   #vision,
@@ -540,13 +647,13 @@ section {
   }
 
   .service-detail img {
-    height: 300px; /* スマホでは画像高さを調整 */
+    height: 300px;
     object-fit: contain;
     object-position: center;
   }
   
   .site-logo img {
-    height: 42px; /* ★ スマホではロゴを 42px に戻す */
+    height: 42px;
   }
 
   .site-header-inner {
@@ -584,7 +691,7 @@ section {
   .page-eyecatch {
     margin: -1.5rem -1.1rem 1.5rem -1.1rem;
     max-width: calc(100% + 2.2rem);
-    height: 180px; /* スマホでは高さを低めに */
+    height: 180px;
   }
   .page-eyecatch img {
     height: 100%;
@@ -592,7 +699,7 @@ section {
 
   /* お問い合わせiframeの調整(SP) */
   .page-box iframe {
-    min-height: 1000px; /* スマホではフォームが縦長になるため高さを増やす */
+    min-height: 1000px;
     width: 100%;
   }
 
@@ -600,5 +707,13 @@ section {
   .site-footer-inner {
     flex-direction: column;
     gap: 1.5rem;
+  }
+  
+  /* フッターSNS(SP) */
+  .footer-social {
+    text-align: left;
+  }
+  .footer-sns-icons {
+    justify-content: flex-start;
   }
 }
