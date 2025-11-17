@@ -13,92 +13,92 @@ Text Domain: my-inventory-child
 
 /* カレンダーの基本レイアウト */
 .inventory-calendar-container {
-    max-width: 900px;
-    margin: 20px auto;
-    font-family: sans-serif;
-    border: 1px solid #ccc;
-    padding: 10px;
+	max-width: 900px;
+	margin: 20px auto;
+	font-family: sans-serif;
+	border: 1px solid #ccc;
+	padding: 10px;
 }
 
 /* ヘッダー */
 #calendar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px 0;
 }
 
 /* グリッドレイアウト（7列表示の肝）*/
 #calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr); /* 7列に均等分割 */
-    gap: 1px;
-    background-color: #ddd; 
-    border: 1px solid #ddd;
-    
-    /* ===== ★ここが最終修正ポイント★ ===== */
-    /* 1. 常に6行分のグリッド構造を明示的に定義 */
-    grid-template-rows: repeat(6, 1fr); 
-    
-    /* 2. 6行分の高さを固定するため、適切な min-height を設定 */
-    /* 既存の .calendar-day の min-height: 70px に合わせて計算：(70px * 6行) + (gap 1px * 5) = 425px が目安。 */
-    min-height: 425px; 
-    
-    /* 3. 各行が利用可能な高さを均等に占有するように指示 (Gridの挙動を強化) */
-    grid-auto-rows: 1fr; 
-    /* ==================================== */
+	display: grid;
+	grid-template-columns: repeat(7, 1fr); /* 7列に均等分割 */
+	gap: 1px;
+	background-color: #ddd; 
+	border: 1px solid #ddd;
+	
+	/* ===== ★ここが最終修正ポイント★ ===== */
+	/* 1. 常に6行分のグリッド構造を明示的に定義 */
+	grid-template-rows: repeat(6, 1fr); 
+	
+	/* 2. 6行分の高さを固定するため、適切な min-height を設定 */
+	/* 既存の .calendar-day の min-height: 70px に合わせて計算：(70px * 6行) + (gap 1px * 5) = 425px が目安。 */
+	min-height: 425px; 
+	
+	/* 3. 各行が利用可能な高さを均等に占有するように指示 (Gridの挙動を強化) */
+	grid-auto-rows: 1fr; 
+	/* ==================================== */
 }
 
 .day-header, .calendar-day {
-    padding: 10px 5px;
-    text-align: center;
-    background-color: #fff;
-    /* 💡 カレンダーのセル高さを均一にするために最小高さを設定 */
-    min-height: 70px; /* 日付とステータスが入る適切な高さに調整 */
-    display: flex; /* Flexboxを使って内容を中央揃えにする */
-    flex-direction: column; /* 縦方向に配置 */
-    justify-content: flex-start; /* 上端揃え */
-    align-items: center; /* 水平中央揃え */
+	padding: 10px 5px;
+	text-align: center;
+	background-color: #fff;
+	/* 💡 カレンダーのセル高さを均一にするために最小高さを設定 */
+	min-height: 70px; /* 日付とステータスが入る適切な高さに調整 */
+	display: flex; /* Flexboxを使って内容を中央揃えにする */
+	flex-direction: column; /* 縦方向に配置 */
+	justify-content: flex-start; /* 上端揃え */
+	align-items: center; /* 水平中央揃え */
 }
 
 .day-header {
-    font-weight: bold;
-    background-color: #eee;
+	font-weight: bold;
+	background-color: #eee;
 }
 
 /* 日付とステータスのスタイル */
 .day-number {
-    display: block;
-    font-size: 1.2em;
-    margin-bottom: 5px; /* ステータスとの間に少しスペースを空ける */
+	display: block;
+	font-size: 1.2em;
+	margin-bottom: 5px; /* ステータスとの間に少しスペースを空ける */
 }
 
 /* ステータスの基本スタイル */
 .status {
-    display: inline-block;
-    padding: 2px 5px;
-    border-radius: 3px;
-    font-size: 0.8em;
-    font-weight: bold;
-    color: #fff;
-    width: 25px; 
-    /* 💡 ステータス記号のボックスが確実に表示されるように */
-    min-height: 20px; /* ステータスの最小高さを確保 */
-    line-height: 1.5; /* テキストの行高さを調整 */
+	display: inline-block;
+	padding: 2px 5px;
+	border-radius: 3px;
+	font-size: 0.8em;
+	font-weight: bold;
+	color: #fff;
+	width: 25px; 
+	/* 💡 ステータス記号のボックスが確実に表示されるように */
+	min-height: 20px; /* ステータスの最小高さを確保 */
+	line-height: 1.5; /* テキストの行高さを調整 */
 }
 
 /* 💡 ステータスがない日や過去日のために高さを確保するプレースホルダー */
 .status-placeholder {
-    display: inline-block;
-    padding: 2px 5px;
-    border-radius: 3px;
-    font-size: 0.8em;
-    font-weight: bold;
-    color: #9E9E9E; /* 例えば、グレーのテキスト */
-    width: 25px; 
-    min-height: 20px; /* ステータスの最小高さを確保 */
-    line-height: 1.5;
-    background-color: transparent; /* 背景は透明 */
+	display: inline-block;
+	padding: 2px 5px;
+	border-radius: 3px;
+	font-size: 0.8em;
+	font-weight: bold;
+	color: #9E9E9E; /* 例えば、グレーのテキスト */
+	width: 25px; 
+	min-height: 20px; /* ステータスの最小高さを確保 */
+	line-height: 1.5;
+	background-color: transparent; /* 背景は透明 */
 }
 
 
@@ -110,26 +110,26 @@ Text Domain: my-inventory-child
 
 /* 満室の日は背景色を変える */
 .is-fully-booked {
-    background-color: #ffe0e0 !important;
+	background-color: #ffe0e0 !important;
 }
 
 .empty-day {
-    background-color: #f7f7f7;
+	background-color: #f7f7f7;
 }
 
 /* 過去の日付のスタイル */
 .past-day {
-    opacity: 0.6;
-    background-color: #e0e0e0 !important; /* グレーアウト */
-    cursor: default; /* クリック不可に見せる */
+	opacity: 0.6;
+	background-color: #e0e0e0 !important; /* グレーアウト */
+	cursor: default; /* クリック不可に見せる */
 }
 
 /* 過去の日付にはステータス記号は非表示 (JSで'-'を埋めるため) */
 .past-day .status {
-    display: none; 
+	display: none; 
 }
 
 /* 💡 過去日にはステータスプレースホルダーを表示 (JavaScriptで「-」を挿入する想定) */
 .past-day .status-placeholder {
-    display: inline-block;
+	display: inline-block;
 }

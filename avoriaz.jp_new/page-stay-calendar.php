@@ -24,9 +24,9 @@ function get_limit_date($key) {
     $cached_settings = get_option( 'cached_calendar_settings' );
     if ( $cached_settings ) {
         $settings = json_decode( $cached_settings, true );
-        return isset($settings[$key]) ? $settings[$key] : '2026-03-31'; 
+        return isset($settings[$key]) ? $settings[$key] : '2026/03/31'; 
     }
-    return '2026-03-31'; 
+    return '2026/03/31'; 
 }
 
 $inventory = get_cached_inventory();
@@ -118,7 +118,7 @@ $limitEndDate = get_limit_date($inventoryKey);
         // 次の月が制限日文字列を超えていないかチェック
         const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
         const nextMonth = currentMonth === 11 ? 1 : currentMonth + 2; // 月は1から12で計算
-        const nextMonthString = `${nextMonthYear}-${String(nextMonth).padStart(2, '0')}-01`;
+        const nextMonthString = `${nextMonthYear}/${String(nextMonth).padStart(2, '0')}/01`;
         
         if (nextMonthString > VIEW_LIMIT_END_DATE_STRING) {
             NEXT_BUTTON.disabled = true;
@@ -137,7 +137,7 @@ $limitEndDate = get_limit_date($inventoryKey);
             const date = new Date(currentYear, currentMonth, day);
             date.setHours(0, 0, 0, 0); 
             
-            const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const dateString = `${currentYear}/${String(currentMonth + 1).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
             
             // ★ 日付文字列で制限日と比較
             if (dateString > VIEW_LIMIT_END_DATE_STRING) {
