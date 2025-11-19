@@ -133,3 +133,28 @@ Text Domain: my-inventory-child
 .past-day .status-placeholder {
 	display: inline-block;
 }
+
+/* --- カレンダーの From-To 選択範囲 --- */
+.calendar-day.selected-from,
+.calendar-day.selected-to {
+  background-color: #007bff !important; /* 濃い青 (例) */
+  color: #fff !important;
+  border-radius: 5px; /* 角を少し丸める */
+}
+.calendar-day.selected-range {
+  background-color: #bde0ff !important; /* 薄い青 (例) */
+}
+
+/* --- 休止期間（ハイフン）のスタイル --- */
+.status-ー { 
+  background-color: #f0f0f0; /* 薄いグレーの背景 */
+  color: #555; /* 濃いグレーの文字 */
+  border: 1px solid #ccc;
+}
+
+/* --- 当日（Tel）のスタイル --- */
+.status-tel {
+  background-color: #ff9800; /* オレンジ系 (例) */
+  color: #fff;
+  font-weight: bold;
+}

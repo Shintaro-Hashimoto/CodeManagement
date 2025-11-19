@@ -2,7 +2,7 @@
 /**
  * Template Name: サウナカレンダーページ
  * Description: Google Sheetsから取得したサウナ在庫状況を表示するカレンダー
- */
+*/
 
 $inventoryKey = 'sauna'; 
 
@@ -24,7 +24,7 @@ function get_limit_date($key) {
 	$cached_settings = get_option( 'cached_calendar_settings' );
 	if ( $cached_settings ) {
 		$settings = json_decode( $cached_settings, true );
-		// ★ スラッシュ形式のフォールバック
+		// スラッシュ形式のフォールバック (サウナ用に変更)
 		return isset($settings[$key]) ? $settings[$key] : '2026/03/31'; 
 	}
 	return '2026/03/31'; 
@@ -88,9 +88,14 @@ $limitEndDate = get_limit_date($inventoryKey);
 	const MONTH_YEAR_HEADER = document.getElementById('current-month-year');
 	const PREV_BUTTON = document.getElementById('prev-month');
 	const NEXT_BUTTON = document.getElementById('next-month');
+
+	const bookingDateInput = document.querySelector('input[name="booking-date"]');
+	
+	let selectedSaunaDate = null;
+
 	
 	// ==========================================================
-	// 3. カレンダー描画関数 (制限日チェックを文字列比較に修正)
+	// 3. カレンダー描画関数 (★「Tel 」優先度 修正)
 	// ==========================================================
 	function renderCalendar() {
 		// 曜日のヘッダー（7個）を残して日付セルを全てクリア
@@ -116,11 +121,8 @@ $limitEndDate = get_limit_date($inventoryKey);
 			PREV_BUTTON.disabled = false;
 		}
 		
-		// 次の月が制限日文字列を超えていないかチェック
 		const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-		const nextMonth = currentMonth === 11 ? 1 : currentMonth + 2; // 月は1から12で計算
-		
-		// ★ 修正点: yyyy/mm/dd 形式に変更
+		const nextMonth = currentMonth === 11 ? 1 : currentMonth + 2;
 		const nextMonthString = `${nextMonthYear}/${String(nextMonth).padStart(2, '0')}/01`;
 		
 		if (nextMonthString > VIEW_LIMIT_END_DATE_STRING) {
@@ -140,10 +142,8 @@ $limitEndDate = get_limit_date($inventoryKey);
 			const date = new Date(currentYear, currentMonth, day);
 			date.setHours(0, 0, 0, 0); 
 			
-			// ★ 修正点: yyyy/mm/dd 形式に変更
 			const dateString = `${currentYear}/${String(currentMonth + 1).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
 			
-			// ★ 日付文字列で制限日と比較
 			if (dateString > VIEW_LIMIT_END_DATE_STRING) {
 				DAYS_CONTAINER.innerHTML += '<div class="calendar-day empty-day"></div>'; 
 				continue; 
@@ -157,16 +157,31 @@ $limitEndDate = get_limit_date($inventoryKey);
 			dayElement.setAttribute('data-date', dateString);
 			dayElement.innerHTML = `<span class="day-number">${day}</span>`;
 			
-			// 過去の日付（今日より前）はグレーアウト
+			// 選択状態に基づいてクラスを付与
+			if (selectedSaunaDate && dateString === selectedSaunaDate) {
+				dayElement.classList.add('selected-from'); 
+			}
+
+			// ★ 修正: 過去日、明日以降、当日の順でステータス表示を分岐
 			if (date.getTime() < TODAY.getTime()) {
+				// 1. 過去の日付
 				dayElement.classList.add('empty-day', 'past-day');
 				dayElement.innerHTML += `<span class="status-placeholder">-</span>`;
-			} else {
+			} else if (date.getTime() > TODAY.getTime()) {
+				// 2. 明日以降
 				if (currentStatus) {
 					dayElement.innerHTML += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
 				} else {
-					// 在庫情報がない場合のデバッグ表示
 					dayElement.innerHTML += `<span class="status status-none">?</span>`;
+				}
+			} else {
+				// 3. ★ 当日 (date.getTime() === TODAY.getTime())
+				if (currentStatus === '✕' || currentStatus === 'ー') {
+					// 3a. 当日だが満室(✕)または休止(ー)の場合 (そちらを優先)
+					dayElement.innerHTML += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
+				} else {
+					// 3b. 当日で空きがある(○, △, ?)場合
+					dayElement.innerHTML += `<span class="status status-tel">Tel </span>`; // ★ 末尾にスペース追加
 				}
 			}
 			
@@ -200,6 +215,37 @@ $limitEndDate = get_limit_date($inventoryKey);
 	});
 
 	renderCalendar();
+
+	// ==========================================================
+	// 5. カレンダーの日付クリック (「Tel」除外ロジック)
+	// ==========================================================
+	DAYS_CONTAINER.addEventListener('click', function(event) {
+		const targetDay = event.target.closest('.calendar-day');
+
+		// 空白セルや過去日、満室(✕)、休止(ー)、当日(Tel)の日は無視
+		if (!targetDay || 
+			targetDay.classList.contains('empty-day') || 
+			targetDay.classList.contains('past-day') ||
+			targetDay.querySelector('.status-✕') || // 満室チェック
+			targetDay.querySelector('.status-ー') || // 休止チェック
+			targetDay.querySelector('.status-tel') ) { // 当日("Tel")チェック
+			return; // クリック無効
+		}
+		
+		const dateSlash = targetDay.getAttribute('data-date'); // "yyyy/mm/dd"
+		const dateHyphen = dateSlash.replace(/\//g, '-'); // "yyyy-mm-dd"
+
+		selectedSaunaDate = dateSlash;
+
+		// フォームに値をセット
+		if (bookingDateInput) {
+			bookingDateInput.value = dateHyphen;
+			
+			bookingDateInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}
+		
+		renderCalendar();
+	});
 </script>
 
 <?php get_footer(); ?>
