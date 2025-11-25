@@ -18,7 +18,7 @@ get_header();
     /* 共通セクション */
     .sauna-section {
         padding: 80px 20px;
-        max-width: 900px;
+        max-width: 1100px; /* 全体の最大幅 */
         margin: 0 auto;
     }
     .sauna-section h2 {
@@ -48,14 +48,14 @@ get_header();
         justify-content: center;
         color: #fff;
         text-shadow: 0 2px 10px rgba(0,0,0,0.7);
-        background-color: #1a1a1a; /* 黒背景 */
+        background-color: #1a1a1a;
         position: relative;
     }
     .sauna-hero::before {
         content: "";
         position: absolute;
         inset: 0;
-        background: rgba(0,0,0,0.3); /* 画像を暗く */
+        background: rgba(0,0,0,0.3);
     }
     .sauna-hero-content {
         position: relative;
@@ -86,7 +86,7 @@ get_header();
         letter-spacing: 0.05em;
     }
 
-    /* コンセプト（中央寄せテキスト） */
+    /* コンセプト */
     .concept-text {
         text-align: center;
         line-height: 2;
@@ -94,21 +94,30 @@ get_header();
         margin-bottom: 60px;
     }
 
-    /* ギャラリー・スペック（2カラム） */
+    /* ★修正: 施設概要エリア (キャンプ設備フォトに合わせる) */
     .sauna-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 40px;
-        align-items: center;
-        margin-bottom: 60px;
+        /* 1カラム・中央寄せに変更 */
+        display: block; 
+        max-width: 800px; /* 幅を800pxに制限 */
+        margin: 0 auto 60px;
     }
     .sauna-grid img {
         width: 100%;
-        height: 350px;
+        height: 500px; /* 高さを500pxに統一 */
         object-fit: cover;
-        border-radius: 4px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        margin-bottom: 40px; /* 画像下の余白 */
     }
+    .sauna-info h3 {
+        text-align: center; /* 見出しを中央寄せ */
+        font-size: 1.8rem;
+        margin-bottom: 30px;
+        color: #333;
+        font-weight: bold;
+    }
+    
+    /* スペック表 */
     .sauna-specs dl {
         display: flex;
         flex-wrap: wrap;
@@ -128,7 +137,7 @@ get_header();
         margin: 0;
     }
 
-    /* こだわりポイント（3カラムアイコン） */
+    /* こだわりポイント */
     .points-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -160,25 +169,26 @@ get_header();
     }
     .btn-sauna {
         display: inline-block;
-        background-color: #333; /* サウナっぽい落ち着いた色 */
+        background-color: #E76F51;
         color: #fff;
         padding: 15px 50px;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         font-weight: bold;
         border-radius: 4px;
         text-decoration: none;
         transition: all 0.3s;
+        box-shadow: 0 5px 15px rgba(231, 111, 81, 0.3);
     }
     .btn-sauna:hover {
-        background-color: #E76F51; /* ホバーでアクセントカラー */
+        background-color: #d65a3b;
         color: #fff;
         transform: translateY(-3px);
     }
 
     @media (max-width: 768px) {
         .sauna-hero h1 { font-size: 2.2rem; }
-        .sauna-grid { grid-template-columns: 1fr; }
         .points-grid { grid-template-columns: 1fr; gap: 40px;}
+        .sauna-grid img { height: 300px; } /* スマホでは高さを抑える */
     }
 </style>
 

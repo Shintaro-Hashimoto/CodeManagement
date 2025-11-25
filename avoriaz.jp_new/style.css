@@ -3,7 +3,7 @@ Theme Name: My Inventory Child Theme
 Theme URI: https://www.avoriaz.jp/
 Description: Hello Elementorの在庫管理用子テーマ
 Author: Lodge Avoriaz
-Version: 2.9.0
+Version: 3.5.0
 Template: hello-elementor
 Text Domain: my-inventory-child
 
@@ -14,7 +14,11 @@ Text Domain: my-inventory-child
 4. フッター (Footer)
 5. フォーム共通スタイル (Forms & CF7)
 6. カレンダーシステム (Inventory Calendar)
-7. モーダルウィンドウ (Modal Window)
+7. モーダルウィンドウ (Policy & Confirm Modal)
+8. シュトーレン特設バナー
+9. キャンプ・設備ギャラリー (Gallery & Slider)
+10. 追従型予約ボタン (Floating Button)
+11. その他調整 (Map, Calendar Note etc.)
 */
 
 /* =========================================
@@ -24,7 +28,7 @@ Text Domain: my-inventory-child
 
 body {
     margin: 0;
-    padding-top: 80px; /* PC用余白 */
+    padding-top: 80px; /* ヘッダー固定用の余白 */
     font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", "メイリオ", sans-serif;
     background: #f6f7fb;
     color: #222;
@@ -32,7 +36,7 @@ body {
 }
 img { max-width: 100%; height: auto; display: block; }
 
-/* 管理バー修正 */
+/* 管理バー(ログイン時)のズレ修正 */
 body.admin-bar .site-header { top: 32px; }
 @media screen and (max-width: 782px) { body.admin-bar .site-header { top: 46px; } }
 
@@ -40,9 +44,9 @@ body.admin-bar .site-header { top: 32px; }
    2. 変数定義 (Variables)
    ========================================= */
 :root {
-    --color-primary: #2C5F2D;
-    --color-accent: #E76F51;
-    --color-brown: #8D6E63;
+    --color-primary: #2C5F2D;   /* フォレストグリーン */
+    --color-accent: #E76F51;    /* ウォームオレンジ */
+    --color-brown: #8D6E63;     /* ウッドブラウン */
     --form-bg: #fff;
     --form-border: #ccc;
     --form-radius: 4px;
@@ -58,40 +62,29 @@ body.admin-bar .site-header { top: 32px; }
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid rgba(0,0,0,0.05);
     width: 100%; 
-    height: 80px; /* 高さを80pxに固定 */
+    height: 80px;
     transition: background 0.3s, height 0.3s;
 }
 
 .header-container {
     max-width: 1100px; width: 100%; margin: 0 auto; padding: 0 1.5rem;
     display: flex; justify-content: space-between; align-items: center; 
-    height: 80px; /* コンテナも80px */
+    height: 80px;
     position: relative;
 }
+/* 視覚的な中央揃えのための微調整 */
+.site-logo, .site-navigation, .header-cta, .menu-toggle { margin-bottom: 5px; }
 
-/* ★微調整: 要素全体を少し上に持ち上げるために下に余白を入れる */
-.site-logo, 
-.site-navigation, 
-.header-cta, 
-.menu-toggle {
-    margin-bottom: 5px; /* これで視覚的に中央〜やや上になります */
-}
-
-/* ロゴ */
 .site-logo { flex-shrink: 0; display: inline-flex; align-items: center; }
 .site-logo a { display: block; line-height: 0; }
-.site-logo img { 
-    height: 48px; 
-    width: auto; object-fit: contain; transition: height 0.3s; 
-    vertical-align: middle;
-}
+.site-logo img { height: 48px; width: auto; object-fit: contain; transition: height 0.3s; }
 
 /* PC Nav */
 .site-navigation ul { display: flex; list-style: none; margin: 0; padding: 0; gap: 1.5rem; }
 .site-navigation a { text-decoration: none; color: #333; font-weight: 600; font-size: 0.95rem; white-space: nowrap; transition: opacity 0.3s; }
 .site-navigation a:hover { opacity: 0.7; color: var(--color-accent); }
 
-/* Reserve Button (PC) */
+/* Reserve Button */
 .header-cta .btn-reserve {
     background-color: var(--color-accent); color: #fff !important; padding: 0.7rem 1.2rem;
     border-radius: 4px; text-decoration: none; font-weight: 600; font-size: 0.95rem;
@@ -106,55 +99,29 @@ body.admin-bar .site-header { top: 32px; }
 }
 .menu-toggle span { display: block; width: 24px; height: 2px; margin: 5px auto; background: #333; border-radius: 2px; transition: 0.3s; }
 
-/* Responsive (Mobile/Tablet - 1150px以下) */
+/* Responsive (Mobile/Tablet) */
 @media (max-width: 1150px) {
-    /* Body余白 */
     body { padding-top: 80px; }
-
-    /* 高さ */
     .site-header, .header-container { height: 80px; }
-    
-    /* 余白 */
     .header-container { padding: 0 20px; justify-content: space-between; }
-
-    /* ロゴサイズ */
-    .site-logo img { height: 36px; } 
-
-    /* ハンバーガー */
+    .site-logo img { height: 36px; }
+    
     .menu-toggle { display: block; margin-left: 15px; margin-right: 0; }
     .menu-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); margin: 0 auto; }
     .menu-toggle.open span:nth-child(2) { opacity: 0; }
     .menu-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); margin: 0 auto; }
     
-    /* 予約ボタン */
     .header-cta { margin-left: auto; margin-right: 0; }
     .header-cta .btn-reserve { 
-        padding: 8px 12px;      
-        font-size: 0.8rem;      
-        border-radius: 2px;     
-        letter-spacing: 0.02em;
+        padding: 8px 12px; font-size: 0.8rem; border-radius: 2px; letter-spacing: 0.02em; 
     }
     
-    /* スマホメニュー展開時 */
     .site-navigation {
-        position: fixed !important;
-        top: 80px; 
-        left: 0; 
-        width: 100%;
-        background: rgba(255, 255, 255, 0.98); 
-        backdrop-filter: blur(10px);
-        border-top: 1px solid rgba(0,0,0,0.05); 
-        box-shadow: 0 10px 15px rgba(0,0,0,0.05);
-        z-index: 100001; 
-        display: none !important; 
-        flex-direction: column; 
-        padding: 1rem 0;
-        height: calc(100vh - 80px); 
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        
-        /* メニュー内の微調整リセット */
-        margin-bottom: 0;
+        position: fixed !important; top: 80px; left: 0; width: 100%;
+        background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 15px rgba(0,0,0,0.05);
+        z-index: 100001; display: none !important; flex-direction: column; padding: 1rem 0;
+        height: calc(100vh - 80px); overflow-y: auto; -webkit-overflow-scrolling: touch; margin-bottom: 0;
     }
     .site-navigation.is-open { display: flex !important; }
     .site-navigation ul { flex-direction: column; width: 100%; gap: 0; }
@@ -193,28 +160,20 @@ h2.form-title { text-align: center; margin-bottom: 40px; color: #333; font-size:
 .form-control { width: 100%; padding: 12px 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box; }
 .form-control:focus { border-color: var(--color-primary); outline: none; }
 
-/* Contact Form 7 */
-.wpcf7 label { font-weight: bold; display: block; margin-bottom: 5px; color: #333; }
-.wpcf7 input[type="text"], .wpcf7 input[type="email"], .wpcf7 input[type="tel"], .wpcf7 input[type="date"], .wpcf7 select, .wpcf7 textarea {
-    width: 100%; padding: 12px 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box; background: #fff; margin-bottom: 15px;
-}
-.wpcf7 input:focus, .wpcf7 select:focus, .wpcf7 textarea:focus { border-color: var(--color-primary); outline: none; }
-
+/* CF7 Buttons */
 .wpcf7 input[type="submit"] {
     background-color: var(--color-primary); color: #fff; border: 2px solid var(--color-primary); 
     padding: 15px 50px; border-radius: 30px; font-size: 1.1rem; font-weight: bold; 
     cursor: pointer; transition: all 0.3s; display: block; margin: 30px auto 0; 
     width: 100%; max-width: 300px; box-shadow: 0 4px 10px rgba(44, 95, 45, 0.3);
 }
-.wpcf7 input[type="submit"]:hover {
-    background-color: #1e421f; border-color: #1e421f; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(44, 95, 45, 0.4);
-}
+.wpcf7 input[type="submit"]:hover { background-color: #1e421f; border-color: #1e421f; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(44, 95, 45, 0.4); }
 .wpcf7 input[type="submit"]:disabled {
     background-color: #fff !important; color: var(--color-primary) !important; border: 2px solid var(--color-primary) !important;
     box-shadow: none !important; opacity: 0.6; cursor: not-allowed; transform: none !important;
 }
 
-/* シュトーレン互換 */
+/* Stollen Buttons */
 .btn-primary { background-color: var(--color-primary); color: #fff; padding: 12px 30px; border-radius: 30px; font-weight: bold; border: none; cursor: pointer; transition: 0.3s; width: 100%; max-width: 320px; }
 .btn-primary:hover { background-color: #1e421f; transform: translateY(-2px); }
 .btn-secondary { background: #fff; color: var(--color-primary); border: 2px solid var(--color-primary); padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; }
@@ -223,6 +182,13 @@ h2.form-title { text-align: center; margin-bottom: 40px; color: #333; font-size:
 .recipient-header { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
 .btn-danger { background: #fff; color: #ff5252; border: 1px solid #ff5252; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; }
 .btn-danger:hover { background-color: #fff5f5; }
+.hidden { display: none !important; }
+#loading-message { text-align: center; display: none; margin-top: 20px; color: var(--color-primary); font-weight: bold; }
+
+@media (max-width: 600px) {
+    .order-form-container { padding: 25px 15px; }
+    .wpcf7 input[type="submit"] { width: 100%; max-width: none; }
+}
 
 /* =========================================
    6. カレンダーシステム (Inventory Calendar)
@@ -242,159 +208,160 @@ h2.form-title { text-align: center; margin-bottom: 40px; color: #333; font-size:
 .status-ー { background-color: #f0f0f0; color: #555; border: 1px solid #ccc; } .status-tel { background-color: #ff9800; color: #fff; font-weight: bold; width: auto; padding: 2px 8px; }
 
 @media (max-width: 600px) {
-    .order-form-container { padding: 25px 15px; }
-    .wpcf7 input[type="submit"] { width: 100%; max-width: none; }
     .inventory-calendar-container { padding: 5px; border: none; }
     .day-header, .calendar-day { min-height: 60px; font-size: 0.9rem; }
 }
 
 /* =========================================
-   7. モーダルウィンドウ (Modal Window)
+   7. モーダルウィンドウ (Policy & Confirm Modal)
    ========================================= */
-.policy-modal-overlay {
+.policy-modal-overlay, .confirm-modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.6); z-index: 100000;
     display: flex; justify-content: center; align-items: center;
     opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; padding: 20px;
 }
-.policy-modal-overlay.is-open { opacity: 1; visibility: visible; }
-.policy-modal-content {
+.policy-modal-overlay.is-open, .confirm-modal-overlay.active { opacity: 1; visibility: visible; }
+.policy-modal-content, .confirm-modal-content {
     background: #fff; width: 100%; max-width: 800px; max-height: 85vh;
     border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     position: relative; display: flex; flex-direction: column;
 }
-.policy-modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-.policy-modal-title { font-size: 1.4rem; font-weight: bold; color: var(--color-primary); margin: 0; }
+.policy-modal-header, .confirm-header {
+    padding: 20px; border-bottom: 1px solid #eee; 
+    font-size: 1.4rem; font-weight: bold; color: var(--color-primary);
+    display: flex; justify-content: space-between; align-items: center;
+}
 .policy-modal-close { background: none; border: none; font-size: 2rem; line-height: 1; cursor: pointer; color: #666; }
-.policy-modal-body { padding: 30px; overflow-y: auto; font-size: 0.95rem; line-height: 1.8; }
-.policy-modal-body h2 { font-size: 1.2rem; border-left: 4px solid var(--color-primary); padding-left: 10px; margin: 30px 0 15px; background: #f9f9f9; padding: 10px; }
-.policy-modal-body h2:first-child { margin-top: 0; }
-.policy-modal-body table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-.policy-modal-body th, .policy-modal-body td { border: 1px solid #ddd; padding: 10px; }
-.policy-modal-body th { background: #f0f0f0; width: 35%; text-align: left; }
-
-/* =========================================
-   8. シュトーレン注文フォーム追加スタイル (緑色ベース)
-   ========================================= */
-
-/* --- 必須・非表示ユーティリティ --- */
-.hidden { display: none !important; }
-#loading-message { text-align: center; display: none; margin-top: 20px; color: var(--color-primary); font-weight: bold; }
-
-/* --- 確認画面 (モーダル) --- */
-.confirm-modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6); z-index: 100000;
-    display: none; justify-content: center; align-items: center; padding: 20px;
-}
-.confirm-modal-overlay.active { display: flex; }
-
-.confirm-modal-content {
-    background: #fff; width: 100%; max-width: 700px; max-height: 90vh;
-    border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    display: flex; flex-direction: column;
-    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif;
-}
-
-.confirm-header {
-    padding: 20px; border-bottom: 1px solid #eee; background: #f9f9f9;
-    border-radius: 8px 8px 0 0; font-weight: bold; font-size: 1.2rem; 
-    color: var(--color-primary); /* 緑色 */
-    text-align: center;
-}
-
-.confirm-body { padding: 30px; overflow-y: auto; font-size: 0.95rem; color: #444; }
-
+.policy-modal-body, .confirm-body { padding: 30px; overflow-y: auto; font-size: 0.95rem; line-height: 1.8; }
 .confirm-footer {
     padding: 20px; border-top: 1px solid #eee; background: #fff;
     border-radius: 0 0 8px 8px; text-align: center; display: flex; justify-content: center; gap: 20px;
 }
+/* ポリシー・確認画面共通パーツ */
+.policy-modal-body h2 { font-size: 1.2rem; border-left: 4px solid var(--color-primary); padding-left: 10px; margin: 30px 0 15px; background: #f9f9f9; padding: 10px; }
+.policy-modal-body table, .confirm-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+.policy-modal-body th, .policy-modal-body td, .confirm-table th, .confirm-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+.policy-modal-body th, .confirm-table th { background: #f0f0f0; width: 35%; text-align: left; }
+.confirm-sub-title { background: #f0f0f0; padding: 8px 15px; font-weight: bold; margin: 20px 0 10px; border-left: 4px solid var(--color-primary); }
+@media (max-width: 600px) { .confirm-footer { flex-direction: column-reverse; } .confirm-footer button { width: 100%; margin-bottom: 10px; } }
 
-/* テーブル */
-.confirm-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-.confirm-table th, .confirm-table td { border: 1px solid #eee; padding: 10px; text-align: left; }
-.confirm-table th { background: #f5f5f5; width: 30%; color: #333; font-weight: bold; font-size: 0.9rem; }
+/* =========================================
+   8. シュトーレン特設バナー
+   ========================================= */
+.promo-section { max-width: 1000px; margin: -40px auto 60px; position: relative; z-index: 5; padding: 0 20px; }
+.promo-box { background-color: #fff; border: 2px solid #8D6E63; border-radius: 8px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.15); background-image: linear-gradient(to bottom right, #fff, #fffbf5); }
+.promo-badge { display: inline-block; background-color: #c62828; color: #fff; font-size: 0.85rem; font-weight: bold; padding: 4px 15px; border-radius: 20px; margin-bottom: 15px; letter-spacing: 0.05em; }
+.promo-title { font-size: 1.6rem; color: #333; margin-bottom: 10px; font-weight: bold; }
+.promo-text { font-size: 0.95rem; color: #666; margin-bottom: 25px; line-height: 1.6; }
+.btn-promo { display: inline-block; background-color: #8D6E63; color: #fff; padding: 12px 40px; border-radius: 50px; font-weight: bold; text-decoration: none; transition: transform 0.3s, background 0.3s; box-shadow: 0 4px 10px rgba(141, 110, 99, 0.4); }
+.btn-promo:hover { background-color: #6d4c41; color: #fff; transform: translateY(-2px); }
 
-/* サブタイトル */
-.confirm-sub-title {
-    background: var(--color-primary); /* 緑色 */
-    color: #fff; padding: 6px 10px; margin: 20px 0 10px; 
-    font-weight: bold; border-radius: 4px; font-size: 0.95rem;
+/* =========================================
+   9. キャンプ・設備ギャラリー (Gallery & Slider)
+   ========================================= */
+/* フォトギャラリー (自動スクロール) */
+.camp-gallery-section { background-color: #fff; padding: 60px 0; overflow: hidden; }
+.gallery-marquee { display: flex; width: max-content; }
+.gallery-track { display: flex; gap: 20px; animation: scroll-left 80s linear infinite; }
+.gallery-track:hover { animation-play-state: paused; }
+@keyframes scroll-left { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+.gallery-item { width: 300px; height: 400px; flex-shrink: 0; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.15); transition: transform 0.3s; }
+.gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+
+/* 設備スライドショー */
+.facility-slider { position: relative; max-width: 800px; height: 500px; margin: 0 auto 20px; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: #f0f0f0; }
+.facility-slide { display: none; height: 100%; width: 100%; }
+.facility-slide.active { display: block; animation: fade 0.5s; }
+@keyframes fade {from {opacity: .4} to {opacity: 1}}
+.facility-slide img { width: 100%; height: 100%; object-fit: cover; }
+.slider-dots { display: flex; justify-content: center; gap: 12px; margin-top: 20px; padding-bottom: 20px; }
+.dot { cursor: pointer; height: 14px; width: 14px; background-color: #ccc; border-radius: 50%; transition: background-color 0.3s ease; }
+.dot.active, .dot:hover { background-color: var(--color-primary); }
+
+/* =========================================
+   10. 追従型予約ボタン (Floating Button)
+   ========================================= */
+.floating-reserve {
+    position: fixed; bottom: 30px; right: 30px; z-index: 9990;
+    opacity: 0; visibility: hidden; transform: translateY(20px);
+    transition: all 0.3s ease;
 }
-.confirm-sub-title:first-child { margin-top: 0; }
+.floating-reserve.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+.btn-float {
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    width: 80px; height: 80px; background-color: var(--color-accent); color: #fff;
+    border-radius: 50%; text-decoration: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    font-weight: bold; font-size: 0.8rem; line-height: 1.2;
+    transition: transform 0.3s, background 0.3s;
+    text-align: center; padding-top: 2px;
+}
+.btn-float:hover { background-color: #d65a3b; transform: scale(1.05); color: #fff; }
+.btn-float span { font-size: 1.4rem; margin-bottom: 2px; display: block; line-height: 1; }
 
-@media (max-width: 600px) {
-  .confirm-footer { flex-direction: column-reverse; }
-  .confirm-footer button { width: 100%; margin-bottom: 10px; }
+/* FAQボタン */
+.btn-faq-link {
+    display: inline-block; background-color: #fff; color: var(--color-primary);
+    border: 2px solid var(--color-primary); padding: 10px 25px; border-radius: 30px;
+    text-decoration: none; font-weight: bold; transition: all 0.3s;
+}
+.btn-faq-link:hover { background-color: #f0f8f0; }
+
+/* =========================================
+   11. その他調整 (Map, Calendar Note etc.)
+   ========================================= */
+.camp-map-img {
+    width: 100% !important; max-width: 800px !important;
+    height: auto !important; display: block !important; margin: 0 auto !important;
+    border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.calendar-price {
+    display: block; font-size: 0.75em; color: #555; margin-top: 2px; line-height: 1.2; white-space: nowrap;
+}
+.calendar-note {
+    font-size: 0.85rem; color: #666; margin-top: 10px; margin-bottom: 40px; line-height: 1.5; text-align: left;
 }
 
-/* --- シュトーレン特設バナー --- */
-    .promo-section {
-        max-width: 1000px;
-        margin: -40px auto 60px; /* ヒーロー画像に少し重ねる */
-        position: relative;
-        z-index: 5; /* 3つの入り口より手前に */
-        padding: 0 20px;
-    }
+/* スマホ用調整 (最終優先) */
+@media screen and (max-width: 768px) {
+    /* シュトーレンバナー */
+    .promo-section { margin-top: -30px; margin-bottom: 40px; }
+    .promo-title { font-size: 1.3rem; }
+    /* ギャラリー */
+    .gallery-item { width: 260px; height: 350px; }
+    .facility-slider { height: 300px; }
     
-    .promo-box {
-        background-color: #fff;
-        border: 2px solid #8D6E63; /* パン工房のブラウン */
-        border-radius: 8px;
-        padding: 30px;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        /* 背景に薄いクリスマスの雰囲気 */
-        background-image: linear-gradient(to bottom right, #fff, #fffbf5);
-    }
+    /* 追従ボタン (reCAPTCHA避け) */
+    .floating-reserve { bottom: 90px !important; right: 15px !important; }
+    .btn-float { width: 65px; height: 65px; font-size: 0.65rem; }
+    .btn-float span { font-size: 1.2rem; }
+    
+    /* カレンダー */
+    .calendar-price { display: none !important; }
 
-    .promo-badge {
-        display: inline-block;
-        background-color: #c62828; /* クリスマスレッド */
-        color: #fff;
-        font-size: 0.85rem;
-        font-weight: bold;
-        padding: 4px 15px;
-        border-radius: 20px;
-        margin-bottom: 15px;
-        letter-spacing: 0.05em;
+    /* ★ヘッダー予約ボタン微調整 (中央揃え) */
+    .header-cta .btn-reserve {
+        display: flex; justify-content: center; align-items: center;
+        padding: 8px 12px; font-size: 0.8rem; min-height: 36px; line-height: 1.2; width: auto;
     }
+}
 
-    .promo-title {
-        font-size: 1.6rem;
-        color: #333;
-        margin-bottom: 10px;
-        font-weight: bold;
-    }
+/* --- 夏季特別規定アラート --- */
+.summer-policy-alert {
+    margin-top: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #fff4f4;
+    border: 2px solid #ff5252;
+    color: #d32f2f;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    animation: fadeIn 0.5s ease;
+}
 
-    .promo-text {
-        font-size: 0.95rem;
-        color: #666;
-        margin-bottom: 25px;
-        line-height: 1.6;
-    }
-
-    .btn-promo {
-        display: inline-block;
-        background-color: #8D6E63;
-        color: #fff;
-        padding: 12px 40px;
-        border-radius: 50px;
-        font-weight: bold;
-        text-decoration: none;
-        transition: transform 0.3s, background 0.3s;
-        box-shadow: 0 4px 10px rgba(141, 110, 99, 0.4);
-    }
-    .btn-promo:hover {
-        background-color: #6d4c41;
-        color: #fff;
-        transform: translateY(-2px);
-    }
-
-    /* スマホ調整 */
-    @media (max-width: 768px) {
-        .promo-section { margin-top: -30px; margin-bottom: 40px; }
-        .promo-title { font-size: 1.3rem; }
-        /* 既存の修正 */
-        .service-grid { margin-top: 0; } /* バナーがある場合、ここのマージンは0にする */
-    }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}

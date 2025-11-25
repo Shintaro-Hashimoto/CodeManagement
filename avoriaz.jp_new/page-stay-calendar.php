@@ -1,16 +1,13 @@
 <?php
 /**
- * Template Name: 宿泊カレンダーページ
- * Description: Google Sheetsから取得した宿泊在庫状況を表示するカレンダー
+ * Template Name: 宿泊カレンダーページ
+ * Description: Google Sheetsから取得した宿泊在庫状況を表示するカレンダー
 */
 
 $inventoryKey = 'stay'; 
 
 get_header(); 
 
-// ==========================================================
-// 1. キャッシュデータの読み込み関数
-// ==========================================================
 function get_cached_inventory() {
 	$cached_data = get_option( 'cached_inventory_status' );
 	if ( $cached_data ) {
@@ -19,18 +16,15 @@ function get_cached_inventory() {
 	return [];
 }
 
-// 制限日を取得する関数 (自動6ヶ月更新版)
 function get_limit_date($key) {
 	$cached_settings = get_option( 'cached_calendar_settings' );
 	
 	if ( $cached_settings ) {
 		$settings = json_decode( $cached_settings, true );
 		if (isset($settings[$key])) {
-			// ★ どんな形式で来ても yyyy/mm/dd に変換して返す
 			return date('Y/m/d', strtotime($settings[$key]));
 		}
 	}
-
 	return date('Y/m/d', strtotime('+6 months'));
 }
 
@@ -53,6 +47,11 @@ $limitEndDate = get_limit_date($inventoryKey);
                 <div class="day-header">日</div><div class="day-header">月</div><div class="day-header">火</div><div class="day-header">水</div><div class="day-header">木</div><div class="day-header">金</div><div class="day-header">土</div>
             </div>
         </div>
+
+        <p class="calendar-note">
+            ※表示金額は、大人1室2名以上ご利用の場合の1名様あたりの料金（税込）です。<br>
+            ※シングルユースの場合は、料金表をご確認ください。
+        </p>
 
         <div style="margin-top: 50px;">
             <h2 style="font-size:1.4rem; border-left:5px solid #2C5F2D; padding-left:15px; margin-bottom:20px;">予約申込みフォーム</h2>
@@ -124,45 +123,45 @@ $limitEndDate = get_limit_date($inventoryKey);
 
 			const statusData = INVENTORY_STATUS[dateString];
 			const currentStatus = statusData ? statusData[inventoryKey] : ''; 
+            const price = statusData ? statusData['price'] : '';
 
 			const dayElement = document.createElement('div');
 			dayElement.className = 'calendar-day';
 			dayElement.setAttribute('data-date', dateString);
-			dayElement.innerHTML = `<span class="day-number">${day}</span>`;
 			
+            let cellContent = `<span class="day-number">${day}</span>`;
+            
 			if (selectedCheckIn) {
 				const checkInTime = new Date(selectedCheckIn).getTime();
-				
-				if (date.getTime() === checkInTime) {
-					dayElement.classList.add('selected-from');
-				}
+				if (date.getTime() === checkInTime) dayElement.classList.add('selected-from');
 				
 				if (selectedCheckOut) {
 					const checkOutTime = new Date(selectedCheckOut).getTime();
-					if (date.getTime() === checkOutTime) {
-						dayElement.classList.add('selected-to');
-					}
-					if (date.getTime() > checkInTime && date.getTime() < checkOutTime) {
-						dayElement.classList.add('selected-range');
-					}
+					if (date.getTime() === checkOutTime) dayElement.classList.add('selected-to');
+					if (date.getTime() > checkInTime && date.getTime() < checkOutTime) dayElement.classList.add('selected-range');
 				}
 			}
 
 			if (date.getTime() < TODAY.getTime()) {
 				dayElement.classList.add('empty-day', 'past-day');
-				dayElement.innerHTML += `<span class="status-placeholder">-</span>`;
+				cellContent += `<span class="status-placeholder">-</span>`;
 			} else if (date.getTime() > TODAY.getTime()) {
 				if (currentStatus) {
-					dayElement.innerHTML += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
+					cellContent += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
+                    // 金額表示 (空きがあり、金額設定がある場合)
+                    if (price && price > 0 && currentStatus !== '✕' && currentStatus !== 'ー') {
+                        const formattedPrice = Number(price).toLocaleString();
+                        cellContent += `<span class="calendar-price">¥${formattedPrice}~</span>`;
+                    }
 				} else {
-					dayElement.innerHTML += `<span class="status status-none">?</span>`;
+					cellContent += `<span class="status status-none">?</span>`;
 				}
 			} else {
 				// 当日
 				if (currentStatus === '✕' || currentStatus === 'ー') {
-					dayElement.innerHTML += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
+					cellContent += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
 				} else {
-					dayElement.innerHTML += `<span class="status status-tel">Tel </span>`; 
+					cellContent += `<span class="status status-tel">Tel </span>`; 
 				}
 			}
 			
@@ -170,6 +169,7 @@ $limitEndDate = get_limit_date($inventoryKey);
 				dayElement.classList.add('is-fully-booked');
 			}
 			
+            dayElement.innerHTML = cellContent;
 			DAYS_CONTAINER.appendChild(dayElement); 
 		}
 	}
@@ -194,7 +194,6 @@ $limitEndDate = get_limit_date($inventoryKey);
 
 	renderCalendar();
 	
-	// 期間チェック
 	function isRangeAvailable(startDateStr, endDateStr) {
 		let currentDate = new Date(startDateStr);
 		let endDate = new Date(endDateStr);

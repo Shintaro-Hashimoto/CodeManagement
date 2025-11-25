@@ -64,6 +64,7 @@ get_header(); ?>
       <div class="form-section">
         <h3>お届け先</h3>
         <div id="recipientsContainer"></div>
+        
         <div style="text-align: center; margin-top: 20px;">
           <button type="button" id="addRecipientBtn" class="btn btn-secondary">＋ お届け先を追加する</button>
         </div>
@@ -79,8 +80,8 @@ get_header(); ?>
         <div class="form-group">
           <label>請求書送付</label>
           <select name="invoice_option" id="invoiceOption" class="form-control">
+            <option value="ご注文者に送付（メール）" selected>ご注文者に送付（メール）</option>
             <option value="商品に同梱">商品に同梱</option>
-            <option value="ご注文者に送付（メール）">ご注文者に送付（メール）</option>
             <option value="その他">その他</option>
           </select>
           
@@ -119,7 +120,8 @@ get_header(); ?>
 </div>
 
 <script>
-  const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxeWW56JkQa_ucSA7y8atHhWU3QM59HEnRipMnyLEJjeAv7qj9-NloPC4QHUhfKX1Mt/exec'; 
+  // 最新のWebアプリURL
+  const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyo21wW9pIiUJY9FW-02Bf-d_HT_sdg9rsLuNUKzg-sstpqui6hp4iPfj-YnzcU-gN6qw/exec'; 
 </script>
 
 <script src="<?php echo get_stylesheet_directory_uri(); ?>/js/stollen-order.js?v=<?php echo time(); ?>"></script>
