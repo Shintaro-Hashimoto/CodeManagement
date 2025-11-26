@@ -201,7 +201,7 @@ get_header(); // 共通ヘッダーを読み込み
                 <div>
                     <h2 class="service-title">宿泊</h2>
                     <p class="service-desc">
-                        標高1,300mの静寂。<br>
+                        標高1,400mの静寂。<br>
                         <strong style="color: #2C5F2D;">評判の創作料理</strong>と温かいおもてなし。ゆったりとした時間をお過ごしください。
                     </p>
                 </div>
@@ -214,7 +214,7 @@ get_header(); // 共通ヘッダーを読み込み
             </div>
             <div class="service-body">
                 <div>
-                    <h2 class="service-title">CAMP 空庭</h2>
+                    <h2 class="service-title">キャンプ</h2>
                     <p class="service-desc">
                         1日1組限定、満天の星空。<br>プライベートキャンプ場「空庭」。
                     </p>
@@ -228,7 +228,7 @@ get_header(); // 共通ヘッダーを読み込み
             </div>
             <div class="service-body">
                 <div>
-                    <h2 class="service-title">パン工房 MARIKO</h2>
+                    <h2 class="service-title">パン工房</h2>
                     <p class="service-desc">
                         35年焼き続ける自慢の味。<br>シュトーレンのご注文はこちら。
                     </p>

@@ -1,15 +1,17 @@
 document.addEventListener('DOMContentLoaded', function() {
+
+    // ============================================================
+    // 夏季特別規定アラート & 送信確認
+    // ============================================================
+    
     // --- 設定 ---
-    const targetFormId = '23db074'; // 宿泊予約フォームのID
     const checkinInputName = 'checkin-date'; // チェックイン日のname属性
     
     // フォーム要素の取得
-    const form = document.querySelector(`form`);
-    // ※特定のフォームに絞る場合は document.querySelector(`form[data-id="${targetFormId}"]`) などにする
-    
     const dateInput = document.querySelector(`input[name="${checkinInputName}"]`);
     const submitBtn = document.querySelector('.wpcf7-submit');
 
+    // 日付入力欄がないページ（サウナやキャンプの一部など）ではここで終了
     if (!dateInput || !submitBtn) return;
 
     // --- 警告メッセージ要素の作成 (最初は非表示) ---
@@ -28,8 +30,9 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     
     // 日付入力欄の直後に挿入
-    dateInput.parentNode.insertBefore(alertBox, dateInput.nextSibling);
-
+    if (dateInput.parentNode) {
+        dateInput.parentNode.insertBefore(alertBox, dateInput.nextSibling);
+    }
 
     // --- 海の日 (7月の第3月曜日) を計算する関数 ---
     function getMarineDay(year) {
@@ -90,8 +93,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!confirm(confirmMsg)) {
                 e.preventDefault(); // 送信キャンセル
+                e.stopPropagation(); // イベント伝播も止める
                 return false;
             }
         }
     });
+    
+    // ページ読み込み時にも日付が入っていればチェック (ブラウザバックや再読み込み時など)
+    if (dateInput.value && isSummerSeason(dateInput.value)) {
+        alertBox.style.display = 'block';
+    }
 });
