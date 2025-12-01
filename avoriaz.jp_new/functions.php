@@ -178,3 +178,17 @@ function my_inventory_child_setup() {
     ) );
 }
 add_action( 'after_setup_theme', 'my_inventory_child_setup', 20 );
+
+
+// -------------------------------------------------------
+// フロントページ（HOME）のページネーション（/page/2/ など）を無効化して404にする
+// -------------------------------------------------------
+function disable_front_page_pagination() {
+    if ( is_front_page() && is_paged() ) {
+        global $wp_query;
+        $wp_query->set_404();
+        status_header( 404 );
+        nocache_headers();
+    }
+}
+add_action( 'template_redirect', 'disable_front_page_pagination' );

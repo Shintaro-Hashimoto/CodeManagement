@@ -1,0 +1,455 @@
+/*
+Theme Name: APProg Simple Theme
+Description: Official Theme for APProg Renewal
+Version: 3.0
+*/
+
+/* ====================================
+   1. リセット & ベース設定
+   ==================================== */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Helvetica Neue", "Helvetica", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Arial, sans-serif;
+    color: #333;
+    line-height: 1.8;
+    background: #fff;
+    -webkit-font-smoothing: antialiased; /* 文字を滑らかに */
+}
+
+a {
+    text-decoration: none;
+    color: #333;
+    transition: 0.3s;
+}
+
+a:hover {
+    opacity: 0.7;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    vertical-align: bottom;
+}
+
+/* 共通レイアウト枠 */
+.inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* ====================================
+   2. ヘッダー
+   ==================================== */
+.site-header {
+    padding: 20px 0;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    position: relative;
+    z-index: 1000;
+}
+
+.site-header .inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ロゴ画像調整 */
+.logo-img {
+    height: 40px; /* ロゴの高さ */
+    width: auto;
+    display: block;
+}
+
+/* ナビゲーション */
+.global-nav ul {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    margin: 0;
+    padding: 0;
+}
+
+.global-nav a {
+    font-weight: bold;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ▼トップページ限定：ヘッダー透過設定▼ */
+/* トップページだけヘッダーを透明にして、画像の上に重ねる */
+body.home .site-header,
+body.front-page .site-header {
+    position: absolute; /* 場所を固定せず浮かせる */
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: transparent; /* 背景色を透明に */
+    border-bottom: none; /* 下の線を消す */
+}
+
+/* ====================================
+   3. メインコンテンツ & ページタイトル
+   ==================================== */
+.site-main {
+    padding: 60px 0 100px;
+    min-height: 60vh;
+}
+
+/* ページタイトルを中央寄せ */
+.page-title {
+    font-size: 32px;
+    margin-bottom: 60px;
+    text-align: center;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+/* 記事本文エリア */
+.page-content {
+    width: 100%;
+}
+
+/* ====================================
+   4. サービスページ (Service)
+   ==================================== */
+.service-list {
+    display: flex;
+    flex-direction: column;
+    gap: 80px;
+}
+
+.service-item {
+    padding: 50px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border-left: 5px solid #333;
+}
+
+.service-item h3 {
+    margin-top: 0;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.service-summary {
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 25px;
+    display: block;
+    font-size: 15px;
+}
+
+/* ====================================
+   5. 事例紹介ページ (Works)
+   ==================================== */
+.works-list {
+    display: flex;
+    flex-direction: column;
+    gap: 80px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.work-item {
+    display: flex;
+    gap: 50px;
+    align-items: flex-start;
+    padding-bottom: 80px;
+    border-bottom: 1px solid #eee;
+}
+
+.work-item:last-child {
+    border-bottom: none;
+}
+
+/* 左側：画像 */
+.work-image {
+    flex: 0 0 45%;
+    width: 45%;
+}
+
+.work-image img {
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    border: 1px solid #f0f0f0;
+}
+
+/* 右側：テキスト */
+.work-content {
+    flex: 1;
+}
+
+.work-category {
+    display: inline-block;
+    background: #eef4fb;
+    color: #0056b3;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 5px 12px;
+    border-radius: 20px;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+}
+
+.work-item h3 {
+    margin-top: 0;
+    font-size: 26px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.tech-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.tech-tag {
+    font-size: 12px;
+    font-weight: 500;
+    background: #f4f4f4;
+    color: #555;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.work-description {
+    margin-bottom: 30px;
+    line-height: 1.9;
+    color: #555;
+}
+
+.work-points {
+    background: #f9f9f9;
+    padding: 25px 30px;
+    border-radius: 8px;
+    font-size: 15px;
+    list-style: none;
+}
+
+.work-points li {
+    margin-bottom: 12px;
+    padding-left: 20px;
+    position: relative;
+    line-height: 1.7;
+}
+
+.work-points li::before {
+    content: "✔";
+    color: #0056b3;
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-weight: bold;
+}
+
+/* ====================================
+   6. 会社概要 (Company)
+   ==================================== */
+.company-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.company-table th,
+.company-table td {
+    border-bottom: 1px solid #eee;
+    padding: 20px;
+    text-align: left;
+}
+
+.company-table th {
+    width: 25%;
+    font-weight: bold;
+    color: #555;
+    white-space: nowrap;
+}
+
+/* ====================================
+   7. お問い合わせフォーム (Contact Form 7)
+   ==================================== */
+.wpcf7 {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.wpcf7 p {
+    margin-bottom: 25px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.wpcf7 label {
+    display: block;
+    width: 100%;
+}
+
+.wpcf7 input[type="text"],
+.wpcf7 input[type="email"],
+.wpcf7 input[type="tel"],
+.wpcf7 textarea,
+.wpcf7 select {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 16px;
+    background: #fdfdfd;
+}
+
+.wpcf7 input:focus,
+.wpcf7 textarea:focus,
+.wpcf7 select:focus {
+    border-color: #333;
+    outline: none;
+    background: #fff;
+}
+
+.wpcf7-radio .wpcf7-list-item {
+    display: inline-block;
+    margin-right: 20px;
+    margin-bottom: 5px;
+    font-weight: normal;
+}
+
+.wpcf7 input[type="submit"] {
+    background: #333;
+    color: #fff;
+    border: none;
+    padding: 16px 0;
+    width: 240px;
+    display: block;
+    margin: 50px auto 0;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    border-radius: 4px;
+    transition: 0.3s;
+}
+
+.wpcf7 input[type="submit"]:hover {
+    opacity: 0.8;
+}
+
+/* エラーメッセージ */
+.wpcf7-not-valid-tip {
+    font-size: 12px;
+    color: #dc3232;
+    margin-top: 5px;
+    font-weight: normal;
+}
+
+/* ====================================
+   8. フッター
+   ==================================== */
+.site-footer {
+    background: #333;
+    color: #fff;
+    text-align: center;
+    padding: 40px 0;
+    margin-top: auto;
+}
+
+.site-footer p {
+    margin: 0;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* ====================================
+   9. スマホ対応 (レスポンシブ)
+   ==================================== */
+@media (max-width: 768px) {
+    /* ヘッダー */
+    .site-header .inner {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .global-nav ul {
+        gap: 15px;
+        font-size: 12px;
+        flex-wrap: wrap; /* メニューが多い場合に折り返す */
+        justify-content: center;
+    }
+
+    /* トップページのヘッダー透過時の背景（視認性確保） */
+    body.home .site-header,
+    body.front-page .site-header {
+        background-color: rgba(255, 255, 255, 0.95);
+        position: relative; /* スマホでは透過をやめる（メニューが見にくい場合のため） */
+    }
+
+    /* メインエリア */
+    .site-main {
+        padding: 40px 0;
+    }
+
+    .page-title {
+        font-size: 24px;
+        margin-bottom: 30px;
+    }
+
+    /* Worksページ（縦積み） */
+    .work-item {
+        flex-direction: column;
+        gap: 30px;
+        padding-bottom: 50px;
+    }
+    
+    .work-image, 
+    .work-content {
+        width: 100%;
+        flex: auto;
+    }
+
+    .work-item h3 {
+        font-size: 22px;
+    }
+
+    /* 会社概要テーブル（縦積み） */
+    .company-table th, 
+    .company-table td {
+        display: block;
+        width: 100%;
+        border: none;
+        padding: 10px 0;
+    }
+    
+    .company-table th {
+        padding-bottom: 0;
+        color: #888;
+        font-size: 12px;
+    }
+    
+    .company-table td {
+        border-bottom: 1px solid #eee;
+    }
+
+    /* サービス */
+    .service-item {
+        padding: 20px;
+    }
+
+    /* コンタクトフォーム送信ボタン */
+    .wpcf7 input[type="submit"] {
+        width: 100%;
+    }
+    
+    /* ロゴ */
+    .logo-img {
+        height: 30px;
+    }
+}

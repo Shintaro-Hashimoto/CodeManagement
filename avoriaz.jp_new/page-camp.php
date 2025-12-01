@@ -233,7 +233,7 @@ get_header();
     .floating-reserve {
         position: fixed !important;
         bottom: 80px !important; right: 30px !important;
-        z-index: 9990 !important;
+        z-index: 99990 !important;
         opacity: 0; visibility: hidden; transform: translateY(20px);
         transition: all 0.3s ease;
     }
@@ -270,11 +270,23 @@ get_header();
         .btn-float { width: 65px; height: 65px; font-size: 0.65rem; }
         .btn-float span { font-size: 1.2rem; }
     }
+    
+    /* ★追加: フェードインアニメーション */
+    .fade-in {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeInUp 1.5s ease-out forwards;
+    }
+    .delay-04 { animation-delay: 0.4s; }
+
+    @keyframes fadeInUp {
+        to { opacity: 1; transform: translateY(0); }
+    }
 </style>
 
 <div class="camp-wrapper">
     <?php
-    // ★コンテンツ出力: 管理画面に入力されたHTMLを表示
+    // 管理画面に入力されたHTMLを表示
     if ( have_posts() ) :
         while ( have_posts() ) : the_post();
             the_content();

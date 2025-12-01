@@ -80,7 +80,7 @@ get_header();
         min-width: 300px;
         border-radius: 8px;
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        height: 300px;
+        height: 300px; /* PCでは高さ固定 */
         object-fit: cover;
     }
     .two-col-text {
@@ -139,7 +139,7 @@ get_header();
         border: 1px solid #ddd;
         background-color: #fff;
         font-size: 0.95rem;
-        min-width: 600px; /* スマホでスクロールさせるための幅 */
+        min-width: 500px;
     }
     .table-scroll {
         overflow-x: auto;
@@ -153,7 +153,6 @@ get_header();
         text-align: center;
         vertical-align: middle;
     }
-    /* ヘッダー行 (緑背景・白文字) */
     .price-table thead th {
         background-color: #2C5F2D !important;
         color: #fff !important;
@@ -167,7 +166,6 @@ get_header();
         display: block;
         opacity: 0.9;
     }
-    /* 左列 (プラン名) */
     .price-table tbody th {
         background-color: #f4f4f4;
         text-align: left;
@@ -204,17 +202,43 @@ get_header();
         color: #fff;
     }
 
+    /* --- スマホ対応 --- */
     @media (max-width: 768px) {
-        .stay-hero h1 { font-size: 2rem; }
+        .stay-hero { 
+            height: 40vh;
+            min-height: 250px;
+        }
+        .stay-hero h1 { font-size: 1.8rem; }
+
+        /* ★修正: スマホでは画像の高さを自動(auto)にして縦横比を保つ */
+        .two-col img {
+            height: auto !important; /* 強制的に自動調整 */
+            max-height: 300px; /* 高くなりすぎないように制限 */
+        }
+
         .stay-section h2 { font-size: 1.5rem; }
         .two-col { flex-direction: column; }
         .two-col.reverse { flex-direction: column; }
     }
+
+        /* ★追加: アニメーション用CSS */
+    .fade-in {
+        animation: fadeIn 1.5s ease-out forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    @keyframes fadeIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
 </style>
 
 <div class="stay-wrapper">
     <?php
-    // 管理画面のHTMLを表示
     if ( have_posts() ) :
         while ( have_posts() ) : the_post();
             the_content();

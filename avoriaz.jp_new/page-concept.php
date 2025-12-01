@@ -8,6 +8,7 @@ get_header();
 ?>
 
 <style>
+    /* --- コンセプトページ専用スタイル --- */
     .concept-wrapper {
         background-color: #fff;
         font-family: "Yu Mincho", "YuMincho", "HiraMinProN-W3", "Hiragino Mincho ProN", "HGMinchoE", "MS PMincho", "MS P明朝", serif; /* 明朝体で物語風に */
@@ -21,7 +22,7 @@ get_header();
         margin: 0 auto;
     }
     
-    /* 縦書き見出し（和の雰囲気も少し入れる場合） */
+    /* 縦書き見出し */
     .vertical-title-wrap {
         display: flex;
         justify-content: center;
@@ -110,6 +111,20 @@ get_header();
         padding: 10px 0;
         font-family: sans-serif;
     }
+    
+    /* ★追加: アニメーション用CSS */
+    .fade-in {
+        animation: fadeIn 1.5s ease-out forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    @keyframes fadeIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 
     @media (max-width: 768px) {
         .concept-hero h1 { font-size: 1.8rem; }
@@ -118,6 +133,7 @@ get_header();
 
 <div class="concept-wrapper">
     <?php
+    // 管理画面のHTMLを表示
     if ( have_posts() ) :
         while ( have_posts() ) : the_post();
             the_content();

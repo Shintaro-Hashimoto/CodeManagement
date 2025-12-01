@@ -94,23 +94,22 @@ get_header();
         margin-bottom: 60px;
     }
 
-    /* ★修正: 施設概要エリア (キャンプ設備フォトに合わせる) */
+    /* 施設概要エリア */
     .sauna-grid {
-        /* 1カラム・中央寄せに変更 */
         display: block; 
-        max-width: 800px; /* 幅を800pxに制限 */
+        max-width: 800px; 
         margin: 0 auto 60px;
     }
     .sauna-grid img {
         width: 100%;
-        height: 500px; /* 高さを500pxに統一 */
+        height: 500px; 
         object-fit: cover;
         border-radius: 12px;
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        margin-bottom: 40px; /* 画像下の余白 */
+        margin-bottom: 40px; 
     }
     .sauna-info h3 {
-        text-align: center; /* 見出しを中央寄せ */
+        text-align: center; 
         font-size: 1.8rem;
         margin-bottom: 30px;
         color: #333;
@@ -184,12 +183,23 @@ get_header();
         color: #fff;
         transform: translateY(-3px);
     }
+    
+    /* ★アニメーション用CSS */
+    .fade-in-up {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeInUp 1.5s ease-out forwards;
+    }
+    .delay-04 { animation-delay: 0.4s; }
+    @keyframes fadeInUp {
+        to { opacity: 1; transform: translateY(0); }
+    }
 
     @media (max-width: 768px) {
         .sauna-hero h1 { font-size: 2.2rem; }
         .points-grid { grid-template-columns: 1fr; gap: 40px;}
-        .sauna-grid img { height: 300px; } /* スマホでは高さを抑える */
-    }
+        .sauna-grid img { height: 300px; } 
+    }    
 </style>
 
 <div class="sauna-wrapper">

@@ -1,0 +1,36 @@
+/*
+Theme Name: Bridge Official Theme
+Author: bridge, llc.
+Description: Simple corporate theme for bridge, llc.
+Version: 1.0
+*/
+
+/* 基本的なフォント設定 */
+body {
+    font-family: 'Noto Sans JP', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* WordPressにログインしている時、上部に黒い管理バーが表示されます。
+  その分ヘッダー（固定配置）が隠れてしまわないように位置をずらす設定です。
+*/
+.admin-bar header { 
+    top: 32px; 
+}
+@media screen and (max-width: 782px) {
+    .admin-bar header { top: 46px; }
+}
+
+/* フェードインアニメーションの定義 */
+.fade-in {
+    animation: fadeIn 1.5s ease-out forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

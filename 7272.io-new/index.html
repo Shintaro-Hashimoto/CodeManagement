@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIDS PLUS カスタマーサポート</title>
+    <style>
+        /* --- 基本設定 --- */
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            line-height: 1.8;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden; /* 横スクロール防止 */
+        }
+        a {
+            text-decoration: none;
+            transition: opacity 0.3s;
+            color: #00b0ff;
+        }
+        a:hover {
+            opacity: 0.7;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* --- ヘッダー --- */
+        header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 40px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            z-index: 10;
+        }
+        header nav a {
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+            margin-left: 30px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        /* --- メインビジュアル (Hero Section) --- */
+        .hero {
+            position: relative;
+            /* ★ここに背景画像を指定 (background.jpg) */
+            background-image: url('background.jpg'); 
+            background-size: cover;
+            background-position: center;
+            /* コンテンツの量に応じて高さを自動調整、最低限の高さを確保 */
+            min-height: 65vh; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #fff;
+            /* 下部の余白を広めにとって波と重ならないようにする */
+            padding: 80px 20px 150px 20px; 
+            box-sizing: border-box;
+        }
+        /* オーバーレイ */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.3); /* 少し明るく調整 */
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        /* ロゴ */
+        .logo-top-left {
+            position: absolute;
+            top: 20px;
+            left: 40px;
+            z-index: 10;
+        }
+        .logo-top-left img {
+            height: 45px;
+            width: auto;
+            display: block;
+        }
+
+        .hero h1 {
+            font-size: 42px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            letter-spacing: 0.05em;
+        }
+        .hero p {
+            font-size: 16px;
+            margin-bottom: 40px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        /* ボタン */
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 15px;
+            min-width: 200px;
+            box-sizing: border-box;
+            color: #fff;
+            letter-spacing: 0.05em;
+        }
+        .btn-primary {
+            background-color: #00b0ff; 
+            border: 2px solid #00b0ff;
+            color: #fff !important;
+        }
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid #fff;
+            color: #fff !important;
+        }
+
+        /* --- CSS(SVG)で作る自然な波型 --- */
+        .wave-divider-css {
+            position: absolute;
+            bottom: -1px; /* 隙間防止 */
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            line-height: 0;
+            z-index: 2;
+        }
+        .wave-divider-css svg {
+            position: relative;
+            display: block;
+            width: calc(100% + 2px); /* 横幅の隙間防止 */
+            height: 120px; /* 波の高さを調整 */
+        }
+        .wave-divider-css .shape-fill {
+            fill: #FFFFFF; /* 白で塗りつぶし */
+        }
+
+
+        /* --- コンテンツエリア --- */
+        .content-section {
+            background-color: #fff;
+            padding: 60px 20px;
+            position: relative;
+            z-index: 3; /* 波より上に */
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            font-size: 28px;
+            margin-bottom: 15px;
+            font-weight: normal;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 15px;
+            display: inline-block;
+        }
+        .intro-text {
+            font-size: 15px;
+            color: #666;
+            margin-bottom: 50px;
+        }
+
+        .steps-wrapper {
+            margin-top: 40px;
+        }
+        .steps-grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .step-card {
+            flex: 1;
+            background: #f9f9f9;
+            padding: 30px;
+            border-radius: 8px;
+            border-top: 4px solid #00b0ff;
+        }
+        .step-label {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00b0ff;
+            margin-bottom: 15px;
+            display: block;
+            text-transform: uppercase;
+        }
+        .step-card p {
+            margin: 0;
+            font-size: 14px;
+            color: #444;
+        }
+        .step-links {
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .step-links a {
+            display: block;
+            margin-bottom: 5px;
+            text-decoration: underline;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #999;
+            background: #fff;
+        }
+
+        /* --- レスポンシブ対応 --- */
+        @media (max-width: 768px) {
+            header {
+                justify-content: center;
+                padding: 15px;
+            }
+            header nav a {
+                margin: 0 10px;
+                font-size: 11px;
+            }
+            .logo-top-left {
+                position: relative;
+                top: 0; left: 0;
+                margin: 70px auto 20px;
+                text-align: center;
+                width: 100%;
+            }
+            .logo-top-left img {
+                margin: 0 auto;
+            }
+            .hero {
+                padding-top: 20px;
+                min-height: auto; 
+                padding-bottom: 130px; /* 波の高さに合わせて調整 */
+            }
+            .wave-divider-css svg {
+                height: 80px; /* スマホでは波を少し低く */
+            }
+            .hero h1 {
+                font-size: 28px;
+            }
+            .btn-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .btn {
+                width: 100%;
+                max-width: 320px;
+            }
+            .steps-grid {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav>
+            <a href="https://www.kidsplus.me" target="_blank">保育ICT「KIDS PLUS」</a>
+            <a href="https://www.kidsplus.co" target="_blank">株式会社kids plus</a>
+        </nav>
+    </header>
+
+    <div class="logo-top-left">
+        <a href="https://www.kidsplus.me"><img src="logo.png" alt="KIDS PLUS"></a>
+    </div>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>KIDS PLUS カスタマーサポート</h1>
+            <p>
+                リモート接続を開始します。<br>
+                オペレーターの指示に従ってボタンを押してください。
+            </p>
+            <div class="btn-container">
+                <a href="https://113366.com/kidsplus" class="btn btn-primary">リモート接続 ①</a>
+                <a href="https://113366.io/" class="btn btn-outline">リモート接続 ②</a>
+            </div>
+        </div>
+
+        <div class="wave-divider-css">
+            <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                <path d="M0,96 C150,150 350,30 600,96 C850,160 1050,40 1200,96 L1200,120 L0,120 Z" class="shape-fill"></path>
+            </svg>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <div class="container">
+            <h2 class="section-title">電話／リモートサポートサービス</h2>
+            <p class="intro-text">
+                パソコン周りのトラブルや、操作などお悩みをお任せサポート。<br>
+                遠隔制御（リモート接続）による支援も行えるため、すぐに解決いたします。
+            </p>
+
+            <div class="steps-wrapper">
+                <h2 class="section-title">ご利用方法</h2>
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <span class="step-label">Step.1</span>
+                        <p>サポートデスクサービスをご提供させていただくにあたり、以下の規定に基づきサービスを提供させていただきます。</p>
+                        <div class="step-links">
+                            <a href="https://www.kidsplus.co/privacy/" target="_blank">プライバシーポリシー</a>
+                            <a href="https://www.kidsplus.co/securitypolicy/" target="_blank">情報セキュリティ方針</a>
+                        </div>
+                    </div>
+                    <div class="step-card">
+                        <span class="step-label">Step.2</span>
+                        <p>サポートデスク専用ダイアルへお電話ください。</p>
+                    </div>
+                    <div class="step-card">
+                        <span class="step-label">Step.3</span>
+                        <p>専門エンジニアがサポートを実施いたします。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        &copy; kids plus & Co.
+    </footer>
+
+</body>
+</html>

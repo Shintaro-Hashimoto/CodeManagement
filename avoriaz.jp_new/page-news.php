@@ -156,7 +156,7 @@ get_header();
 
 <div class="news-wrapper">
     <div class="news-hero">
-        <h1>NEWS & TOPICS</h1>
+        <h1 class="fade-in-up">NEWS & EVENT</h1>
     </div>
 
     <div class="news-container">

@@ -175,6 +175,21 @@ get_header();
 
         .stollen-highlight { padding: 40px 20px; }
     }
+
+            /* ★追加: アニメーション用CSS */
+    .fade-in {
+        animation: fadeIn 1.5s ease-out forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    @keyframes fadeIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
 </style>
 
 <div class="bakery-wrapper">
