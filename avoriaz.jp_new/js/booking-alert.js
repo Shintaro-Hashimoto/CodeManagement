@@ -56,7 +56,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- 期間チェック関数 ---
     function isSummerSeason(dateString) {
         if (!dateString) return false;
+        
+        // ハイフン区切り等に対応してDateオブジェクト化
         const date = new Date(dateString);
+        if (isNaN(date.getTime())) return false; // 無効な日付なら無視
+
         const year = date.getFullYear();
         
         // 海の日 (開始)
@@ -73,6 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- イベント1: 日付変更時に警告を表示 ---
+    // (手動入力やカレンダーからの入力に対応)
     dateInput.addEventListener('change', function() {
         if (isSummerSeason(this.value)) {
             alertBox.style.display = 'block';

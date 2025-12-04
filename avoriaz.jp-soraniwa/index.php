@@ -20,8 +20,6 @@
    <a href="#nature"><div class="scroll"><span class="txt">Scroll</span></div></a>
   </div>
  </section>
- <!-- #mv /-->
-
  <section id="nature" class="section">
   <h2 class="mincho">天空の自然体験</h2>
   <div class="swiper infinitySwiper">
@@ -57,8 +55,6 @@
   </div>
   <div class="linkBtn"><a href="#access">アクセス</a></div>
 </section>
- <!-- #nature /-->
-
  <section id="food" class="section">
   <h2 class="mincho">地産のおいしい体験</h2>
   <div class="swiper infinitySwiper">
@@ -81,8 +77,6 @@
    <div class="linkBtn"><a href="#option">物販はこちら</a></div>
   </div>
  </section>
- <!-- #food /-->
-
  <section id="pension" class="section">
   <h2 class="mincho">ペンションの併設</h2>
   <div class="swiper infinitySwiper">
@@ -104,8 +98,6 @@
    <div class="linkBtn"><a href="https://www.avoriaz.jp/" target="_blank">ロッジ・アボリアについて</a></div>
   </div>
  </section>
- <!-- #pension /-->
-
  <section id="about" class="section">
   <h2 class="mincho">1日1グループ限定<br>キャンプサイトのご紹介</h2>
   <div class="imgCont"><img src="<?php echo get_stylesheet_directory_uri(); ?>/assets/img/top/about/sitemap.jpg" alt="キャンプサイトのご紹介" width="100%;" loading="lazy"></div>
@@ -114,7 +106,7 @@
     <div class="gry">
      <dl>
       <dt>敷地面積：</dt>
-      <dd>Aサイト184&#13217;、Bサイト70&#13217;、Cサイト20&#13217;</dd>
+      <dd>Aサイト184㎡、Bサイト70㎡、Cサイト20㎡</dd>
       <dt>定員：</dt>
       <dd>最大20人</dd>
       <dt>設備：</dt>
@@ -207,14 +199,12 @@
    <div class="textCont">
     <h3>施設・設備</h3>
     <p>■炊事棟<br>炊事棟はお湯がでるので食器の油汚れを落とすのも、寒い日のキャンプも快適です。<br><br>
-     ■トイレ<br>男女別。ウォシュレット付きの水洗トイレです。<br>女子トイレには大きな鏡と電源を設置しているので身支度にもご利用いただけます。<br><br>
-     ■電源<br>電源あり(1200w)。ご自由にお使いください。<br><br>■シャワー（無料）<br>併設するロッジ内のシャワーをご利用いただけます。<br>使用する場合はチェックイン時にお申し出ください。<br>※ロッジの混雑具合により使用できない場合もございますのでご了承ください。</p>
+      ■トイレ<br>男女別。ウォシュレット付きの水洗トイレです。<br>女子トイレには大きな鏡と電源を設置しているので身支度にもご利用いただけます。<br><br>
+      ■電源<br>電源あり(1200w)。ご自由にお使いください。<br><br>■シャワー（無料）<br>併設するロッジ内のシャワーをご利用いただけます。<br>使用する場合はチェックイン時にお申し出ください。<br>※ロッジの混雑具合により使用できない場合もございますのでご了承ください。</p>
    </div>
   </div>
  </section>
-  <!-- #about /-->
-
- <section id="important" class="section">
+  <section id="important" class="section">
   <h2>ご利用料金・規約</h2>
   <div class="s-container">
    <div class="cont">
@@ -287,7 +277,7 @@
     </ul>
    </div>
    <div class="cont">
-    <h3>&#12298;禁止事項＆注意事項&#12299;</h3>
+    <h3>《禁止事項＆注意事項》</h3>
     <ul>
      <li>場内への車の乗り入れはできません。キャンプ場駐車場をご利用ください。</li>
      <li>直火や背の低い焚火台は芝生保護のため禁止とさせていただきます。<br>なお、焚き火台やBBQコンロをお使いの場合は、必ず耐火シート＆コンクリートブロックを敷いた上でご使用ください。<br>※遮熱シートレンタル　Mサイズ：¥500/Lサイズ：¥800　コンクリートブロックはご自由にお使いください。</li>
@@ -304,12 +294,10 @@
     </ul>
    </div>
    <div class="cont">
-    <h3>&#12298;利用者のリスクについて&#12299;</h3>
+    <h3>《利用者のリスクについて》</h3>
     <p>当キャンプ場は安全が保証されている場所ではございません。熊や猿などの動物との遭遇による事故、強風による倒木などの事故、突風による事故、落雷事故、お子様などの遭難リスク、自動車による事故、盗難のリスクなど、様々なリスクがあります。自然と寄り添いながら、リスクを想定した自己責任の範囲での利用に同意頂ける方の予約を受け付けております。事故防止への配慮や整備、説明など、キャンプ場管理者としてできる限りの対応をしておりますが、利用者さまの理解と配慮ある行動の上で、安全で楽しい時間が過ごせると考えております。上記に関して同意と共感を頂けない場合は、ご利用頂けませんので予めご理解とご了承をお願い申し上げます。</p>
    </div>
  </section>
- <!-- #important /-->
-
  <section id="option" class="section">
   <h2>Rental＆Sale</h2>
   <div class="s-container">
@@ -336,8 +324,7 @@
       <dd><?php the_content(); ?></dd>
      <?php endwhile; endif; wp_reset_postdata(); ?>
     </dl>
-    <!--<p class="note">※その他レンタル品は2022年中休止とさせていただいております。</p>-->
-   </div>
+    </div>
    <div class="cont">
     <h3>Sale</h3>
     <div class="saleCont goods">
@@ -416,8 +403,6 @@
    <p class="note">※仕入れ状況により変わります。<br>※事前予約が必要な食材がございます。</p>
   </div>
  </section>
- <!-- #option /-->
-
  <section id="access" class="section">
   <h2>アクセス・周辺情報</h2>
   <div class="container">
@@ -458,19 +443,13 @@
    </div>
   </div>
  </section>
- <!-- #access /-->
-
-
  <section id="instagram" class="section">
   <h2>Instagram</h2>
   <div class="container">
    <?php echo do_shortcode('[instagram-feed feed=3]'); ?>
   </div>
  </section>
-  <!-- #instagram /-->
-
-
- <section id="faq" class="section">
+  <section id="faq" class="section">
   <h2>よくあるご質問</h2>
   <?php
   $terms = get_terms( 'faq-cat' );
@@ -504,8 +483,6 @@
   <?php endforeach; ?>
 
  </section>
- <!-- #faq /-->
-
  <section id="news" class="section">
   <h2>お知らせ</h2>
   <div class="container">
@@ -516,7 +493,7 @@
      'posts_per_page' => 3,
      'order' => 'DESC',
      'category_name' => 'news'
-     );
+      );
       $posts = get_posts( $arg ); if( $posts ): ?>
     <?php foreach ( $posts as $post ) : setup_postdata( $post ); ?>
      <div class="cont swiper-slide">
@@ -540,28 +517,28 @@
 
   </div>
  </section>
- <!-- #news /-->
-
-
  <section id="calendar" class="section">
   <h2>Calendar</h2>
   <div class="container">
-   <?php echo do_shortcode('[booking_package id=2]'); ?>
-   <div class="linkBtn"><p>※11月〜4月中旬まで冬季休業中</p><a href="/reservation/">ご予約はこちら</a></div>
+   <div class="s-container">
+    <p style="text-align:center; margin-bottom:20px;">
+      現在、ご予約は新しい予約サイトにて承っております。<br>
+      以下のボタンより空き状況をご確認ください。
+    </p>
+   </div>
+   <div class="linkBtn">
+     <a href="https://www.avoriaz.jp/reservation-camp/" target="_blank">予約カレンダー・空き状況を見る</a>
+   </div>
+   <p style="text-align: center; margin-top: 10px; font-size: 0.9em;">※11月〜4月中旬まで冬季休業中</p>
   </div>
  </section>
- <!-- #calendar /-->
-
- <section id="contact" class="section">
+<section id="contact" class="section">
   <h2>Contact</h2>
   <div class="container">
-   <p>電話予約・お問い合わせ<br><a href="tel:0268-74-2704">0268-74-2704</a>（9:30〜18:00）</p>
-   <div class="linkBtn"><a href="/contact/">お問い合わせフォーム</a></div>
-   <!--<div class="linkBtn" style="margin-bottom: 1rem;"><a href="mailto:info@avoriaz.jp">お問い合わせはこちら</a></div>-->
+   <p>電話予約・お問い合わせ<br><a href="tel:0268-74-2704">0268-74-2704</a>（9:00〜20:00）</p>
+   <div class="linkBtn"><a href="https://www.avoriaz.jp/contact/" target="_blank">お問い合わせフォーム</a></div>
   </div>
  </section>
- <!-- #calendar /-->
-
  <section id="bottom">
   <div class="container">
    <p>R2事業再構築補助金対象</p>
@@ -569,7 +546,7 @@
  </section>
  <section id="float">
   <div class="floatBtn">
-   <a href="/reservation/">ご予約はこちら</a>
+   <a href="https://www.avoriaz.jp/reservation-camp/" target="_blank">ご予約はこちら</a>
   </div>
   <div class="topBtn">
    <a href="/#mv">TOPへ戻る</a>

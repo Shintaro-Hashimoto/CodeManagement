@@ -1,7 +1,7 @@
 <?php
 /**
- * Template Name: 宿泊カレンダーページ
- * Description: Google Sheetsから取得した宿泊在庫状況を表示するカレンダー
+ * Template Name: 宿泊カレンダーページ
+ * Description: Google Sheetsから取得した宿泊在庫状況を表示するカレンダー
 */
 
 $inventoryKey = 'stay'; 
@@ -22,9 +22,11 @@ function get_limit_date($key) {
 	if ( $cached_settings ) {
 		$settings = json_decode( $cached_settings, true );
 		if (isset($settings[$key])) {
+			// 日付フォーマットを統一
 			return date('Y/m/d', strtotime($settings[$key]));
 		}
 	}
+	// 設定がない場合の保険（今日から6ヶ月後）
 	return date('Y/m/d', strtotime('+6 months'));
 }
 
@@ -148,7 +150,7 @@ $limitEndDate = get_limit_date($inventoryKey);
 			} else if (date.getTime() > TODAY.getTime()) {
 				if (currentStatus) {
 					cellContent += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
-                    // 金額表示 (空きがあり、金額設定がある場合)
+                    // 金額表示
                     if (price && price > 0 && currentStatus !== '✕' && currentStatus !== 'ー') {
                         const formattedPrice = Number(price).toLocaleString();
                         cellContent += `<span class="calendar-price">¥${formattedPrice}~</span>`;
@@ -194,17 +196,22 @@ $limitEndDate = get_limit_date($inventoryKey);
 
 	renderCalendar();
 	
+	// ★ 期間チェック関数 (修正版)
 	function isRangeAvailable(startDateStr, endDateStr) {
 		let currentDate = new Date(startDateStr);
 		let endDate = new Date(endDateStr);
 		
-		currentDate.setDate(currentDate.getDate() + 1); 
+		// ★ 修正: チェックイン当日の夜からチェックを開始する
+		// (以前は +1日 していたため、初日の在庫チェックが漏れていました)
+		// currentDate.setDate(currentDate.getDate()); // そのまま
 		
 		while (currentDate.getTime() < endDate.getTime()) {
 			const dateString = `${currentDate.getFullYear()}/${String(currentDate.getMonth() + 1).padStart(2, '0')}/${String(currentDate.getDate()).padStart(2, '0')}`;
+			
 			const statusData = INVENTORY_STATUS[dateString];
 			const currentStatus = statusData ? statusData[inventoryKey] : '';
 			
+			// 期間内の夜に ✕ か ー があったらNG
 			if (currentStatus === '✕' || currentStatus === 'ー') {
 				return false; 
 			}
@@ -213,35 +220,62 @@ $limitEndDate = get_limit_date($inventoryKey);
 		return true; 
 	}
 
+	// ★ クリックイベント (修正版)
 	DAYS_CONTAINER.addEventListener('click', function(event) {
 		const targetDay = event.target.closest('.calendar-day');
 
+        // --- 1. 基本的なクリック可否判定 ---
+        // 過去日と休止(ー)は常にNG
 		if (!targetDay || 
 			targetDay.classList.contains('empty-day') || 
 			targetDay.classList.contains('past-day') ||
-			targetDay.querySelector('.status-✕') || 
-			targetDay.querySelector('.status-ー') || 
-			targetDay.querySelector('.status-tel') ) { 
+			targetDay.querySelector('.status-ー') ) { 
 			return; 
 		}
 		
 		const dateSlash = targetDay.getAttribute('data-date'); 
 		const clickedTime = new Date(dateSlash).getTime(); 
+        
+        // 満室(✕) または 当日(Tel) かどうか
+        const isUnavailable = targetDay.querySelector('.status-✕') || targetDay.querySelector('.status-tel');
 
 		if (!selectedCheckIn || selectedCheckOut) {
+            // --- A. チェックイン日を選択する時 ---
+            // 満室(✕) や Tel の日は「チェックイン」できないのでブロック
+            if (isUnavailable) {
+                return;
+            }
 			selectedCheckIn = dateSlash; 
 			selectedCheckOut = null;
+
 		} else {
+            // --- B. チェックアウト日を選択する時 ---
 			const checkInTime = new Date(selectedCheckIn).getTime(); 
 
 			if (clickedTime < checkInTime) {
+                // チェックインより前をクリック -> 新しいチェックイン日として設定
+                // (ただし ✕ や Tel なら選べない)
+                if (isUnavailable) {
+                    return;
+                }
 				selectedCheckIn = dateSlash; 
+
 			} else if (clickedTime > checkInTime) {
+                // チェックインより後をクリック -> チェックアウト日として設定
+                // ★ ここでは、クリックした日が ✕ や Tel でもOK (チェックアウトは朝なので)
+                
+                // ただし、その間の期間が空いているかチェック
 				if (isRangeAvailable(selectedCheckIn, dateSlash)) {
 					selectedCheckOut = dateSlash; 
 				} else {
 					alert('休止期間または満室の日をまたいで選択することはできません。');
-					selectedCheckIn = dateSlash; 
+                    // リセットして、クリックした日を新チェックインにするか、選択解除するか
+                    // ここでは「今のクリックが有効なら新チェックイン、無効なら選択解除」の動きにします
+                    if (!isUnavailable) {
+					    selectedCheckIn = dateSlash; 
+                    } else {
+                        selectedCheckIn = null;
+                    }
 					selectedCheckOut = null;
 				}
 			}

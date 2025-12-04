@@ -8,9 +8,6 @@ $inventoryKey = 'camp';
 
 get_header(); 
 
-// ==========================================================
-// 1. キャッシュデータの読み込み関数
-// ==========================================================
 function get_cached_inventory() {
 	$cached_data = get_option( 'cached_inventory_status' );
 	if ( $cached_data ) {
@@ -19,18 +16,22 @@ function get_cached_inventory() {
 	return [];
 }
 
-// 制限日を取得する関数 (自動6ヶ月更新版)
+// 制限日を取得する関数 (日付パース強化版)
 function get_limit_date($key) {
 	$cached_settings = get_option( 'cached_calendar_settings' );
 	
 	if ( $cached_settings ) {
 		$settings = json_decode( $cached_settings, true );
 		if (isset($settings[$key])) {
-			// ★ どんな形式で来ても yyyy/mm/dd に変換して返す
-			return date('Y/m/d', strtotime($settings[$key]));
+            // 余分な空白削除と日付チェック
+            $raw_date = trim($settings[$key]);
+            $timestamp = strtotime($raw_date);
+            if ($timestamp !== false && $timestamp > 0) {
+			    return date('Y/m/d', $timestamp);
+            }
 		}
 	}
-
+	// 設定がない、または無効な場合の保険（今日から6ヶ月後）
 	return date('Y/m/d', strtotime('+6 months'));
 }
 
@@ -128,8 +129,9 @@ $limitEndDate = get_limit_date($inventoryKey);
 			const dayElement = document.createElement('div');
 			dayElement.className = 'calendar-day';
 			dayElement.setAttribute('data-date', dateString);
-			dayElement.innerHTML = `<span class="day-number">${day}</span>`;
 			
+            let cellContent = `<span class="day-number">${day}</span>`;
+
 			if (selectedCheckIn) {
 				const checkInTime = new Date(selectedCheckIn).getTime();
 				
@@ -150,19 +152,19 @@ $limitEndDate = get_limit_date($inventoryKey);
 
 			if (date.getTime() < TODAY.getTime()) {
 				dayElement.classList.add('empty-day', 'past-day');
-				dayElement.innerHTML += `<span class="status-placeholder">-</span>`;
+				cellContent += `<span class="status-placeholder">-</span>`;
 			} else if (date.getTime() > TODAY.getTime()) {
 				if (currentStatus) {
-					dayElement.innerHTML += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
+					cellContent += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
 				} else {
-					dayElement.innerHTML += `<span class="status status-none">?</span>`;
+					cellContent += `<span class="status status-none">?</span>`;
 				}
 			} else {
 				// 当日
 				if (currentStatus === '✕' || currentStatus === 'ー') {
-					dayElement.innerHTML += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
+					cellContent += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
 				} else {
-					dayElement.innerHTML += `<span class="status status-tel">Tel </span>`; 
+					cellContent += `<span class="status status-tel">Tel </span>`; 
 				}
 			}
 			
@@ -170,6 +172,7 @@ $limitEndDate = get_limit_date($inventoryKey);
 				dayElement.classList.add('is-fully-booked');
 			}
 			
+            dayElement.innerHTML = cellContent;
 			DAYS_CONTAINER.appendChild(dayElement); 
 		}
 	}
@@ -194,12 +197,12 @@ $limitEndDate = get_limit_date($inventoryKey);
 
 	renderCalendar();
 	
+	// ★ 期間チェック関数 (修正版: 初日漏れ防止)
 	function isRangeAvailable(startDateStr, endDateStr) {
 		let currentDate = new Date(startDateStr);
 		let endDate = new Date(endDateStr);
 		
-		currentDate.setDate(currentDate.getDate() + 1); 
-		
+		// チェックイン当日の夜からチェック
 		while (currentDate.getTime() < endDate.getTime()) {
 			const dateString = `${currentDate.getFullYear()}/${String(currentDate.getMonth() + 1).padStart(2, '0')}/${String(currentDate.getDate()).padStart(2, '0')}`;
 			const statusData = INVENTORY_STATUS[dateString];
@@ -213,35 +216,55 @@ $limitEndDate = get_limit_date($inventoryKey);
 		return true; 
 	}
 
+	// ★ クリックイベント (修正版: 満室チェックアウト許可)
 	DAYS_CONTAINER.addEventListener('click', function(event) {
 		const targetDay = event.target.closest('.calendar-day');
 
+        // 過去日と休止(ー)は常にNG
 		if (!targetDay || 
 			targetDay.classList.contains('empty-day') || 
 			targetDay.classList.contains('past-day') ||
-			targetDay.querySelector('.status-✕') || 
-			targetDay.querySelector('.status-ー') || 
-			targetDay.querySelector('.status-tel') ) { 
+			targetDay.querySelector('.status-ー') ) { 
 			return; 
 		}
 		
 		const dateSlash = targetDay.getAttribute('data-date'); 
 		const clickedTime = new Date(dateSlash).getTime(); 
 
+        // 満室(✕) または 当日(Tel) かどうか
+        const isUnavailable = targetDay.querySelector('.status-✕') || targetDay.querySelector('.status-tel');
+
 		if (!selectedCheckIn || selectedCheckOut) {
+            // --- A. チェックイン日を選択 ---
+            // 満室(✕) や Tel の日はチェックイン不可
+            if (isUnavailable) {
+                return;
+            }
 			selectedCheckIn = dateSlash; 
 			selectedCheckOut = null;
 		} else {
+            // --- B. チェックアウト日を選択 ---
 			const checkInTime = new Date(selectedCheckIn).getTime(); 
 
 			if (clickedTime < checkInTime) {
+                // チェックインより前をクリック -> 新チェックイン日 (ただし ✕/Tel なら不可)
+                if (isUnavailable) {
+                    return;
+                }
 				selectedCheckIn = dateSlash; 
 			} else if (clickedTime > checkInTime) {
+                // チェックアウト日として設定 (✕やTelでもOK)
+                // ただし間の期間が空いているかチェック
 				if (isRangeAvailable(selectedCheckIn, dateSlash)) {
 					selectedCheckOut = dateSlash; 
 				} else {
 					alert('休止期間または満室の日をまたいで選択することはできません。');
-					selectedCheckIn = dateSlash; 
+                    // リセット: クリック日が有効なら新チェックイン、無効なら選択解除
+                    if (!isUnavailable) {
+                        selectedCheckIn = dateSlash;
+                    } else {
+                        selectedCheckIn = null;
+                    }
 					selectedCheckOut = null;
 				}
 			}

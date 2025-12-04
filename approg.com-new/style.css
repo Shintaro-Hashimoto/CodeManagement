@@ -453,3 +453,8 @@ body.front-page .site-header {
         height: 30px;
     }
 }
+
+/* reCAPTCHAバッジを非表示 */
+.grecaptcha-badge { 
+    visibility: hidden; 
+}

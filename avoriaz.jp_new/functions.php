@@ -192,3 +192,41 @@ function disable_front_page_pagination() {
     }
 }
 add_action( 'template_redirect', 'disable_front_page_pagination' );
+
+// -------------------------------------------------------
+// 古いURLからの301リダイレクト設定
+// -------------------------------------------------------
+function custom_redirect_old_urls() {
+    // 現在アクセスされているURLを取得
+    $request_uri = $_SERVER['REQUEST_URI'];
+
+    // 転送ルールの設定
+    // '古いURLに含まれる文字列' => '新しい転送先パス'
+    $redirect_rules = [
+        '/food/'   => '/stay/',    // 食事ページ → 宿泊ページへ/
+        '/mariko/' => '/bakery/',  // MARIKO → パン工房ページへ
+        '/stollen/' => '/bakery/',  // シュトーレン → パン工房ページへ
+        // 他にもあればここに追加してください
+    ];
+
+    foreach ( $redirect_rules as $old_slug => $new_path ) {
+        // もしURLに古いスラッグが含まれていたら
+        if ( strpos( $request_uri, $old_slug ) !== false ) {
+            // 新しいURLへ301転送
+            wp_redirect( home_url( $new_path ), 301 );
+            exit;
+        }
+    }
+}
+add_action( 'template_redirect', 'custom_redirect_old_urls' );
+
+// -------------------------------------------------------
+// 存在しないURLで、勝手に画像などにリダイレクトする機能を無効化
+// -------------------------------------------------------
+function disable_redirect_canonical( $redirect_url ) {
+    if ( is_404() ) {
+        return false;
+    }
+    return $redirect_url;
+}
+add_filter( 'redirect_canonical', 'disable_redirect_canonical' );
