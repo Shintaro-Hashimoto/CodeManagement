@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      background: white;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      color: #0056b3;
+      text-align: center;
+      border-bottom: 2px solid #0056b3;
+      padding-bottom: 10px;
+    }
+
+    .header-info {
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .list-group {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .list-item {
+      border-bottom: 1px solid #eee;
+      padding: 15px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .list-item:last-child {
+      border-bottom: none;
+    }
+
+    .item-info {
+      flex-grow: 1;
+    }
+
+    .item-date {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .item-time {
+      color: #666;
+    }
+
+    /* チェックボックスのデザイン */
+    .checkbox-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+    }
+
+    .checkbox-wrapper input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .checkmark {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 30px;
+      width: 30px;
+      background-color: #eee;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .checkbox-wrapper input:checked~.checkmark {
+      background-color: #28a745;
+    }
+
+    .checkmark:after {
+      content: "";
+      position: absolute;
+      display: none;
+    }
+
+    .checkbox-wrapper input:checked~.checkmark:after {
+      display: block;
+    }
+
+    .checkbox-wrapper .checkmark:after {
+      left: 10px;
+      top: 5px;
+      width: 8px;
+      height: 15px;
+      border: solid white;
+      border-width: 0 3px 3px 0;
+      transform: rotate(45deg);
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      background-color: #0056b3;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: bold;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    .btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    .note {
+      font-size: 12px;
+      color: #d9534f;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container" id="main">
+    <h2>翌月のレッスンスケジュール確認</h2>
+    <div class="header-info">
+      <?= facilityName ?> 様<br>
+      対象月:
+      <?= targetMonthStr ?>
+    </div>
+
+    <form id="scheduleForm">
+      <ul class="list-group">
+        <? for (var i = 0; i < reservations.length; i++) { ?>
+        <? var r = reservations[i]; ?>
+        <li class="list-item">
+          <div class="item-info">
+            <div class="item-date">
+              <?= r.displayDate ?>
+            </div>
+            <div class="item-time">
+              <?= r.displayTime ?>
+            </div>
+          </div>
+          <label class="checkbox-wrapper">
+            <input type="checkbox" name="reservationIds" value="<?= r.id ?>" checked>
+            <span class="checkmark"></span>
+          </label>
+        </li>
+        <? } ?>
+      </ul>
+    </form>
+
+    <p class="note">※参加しない日程のチェックを外して「確定」を押してください。</p>
+    <button class="btn" id="submitBtn" onclick="doSubmit()">上記の内容で確定する</button>
+    <p id="msg" style="text-align:center; margin-top:10px;"></p>
+  </div>
+
+  <script>
+    function doSubmit() {
+      const btn = document.getElementById('submitBtn');
+      const msg = document.getElementById('msg');
+      const form = document.getElementById('scheduleForm');
+
+      // チェックが外された（キャンセルする）IDを収集
+      const allCheckboxes = form.querySelectorAll('input[name="reservationIds"]');
+      const cancelIds = [];
+
+      allCheckboxes.forEach(cb => {
+        if (!cb.checked) {
+          cancelIds.push(cb.value);
+        }
+      });
+
+      if (cancelIds.length === 0) {
+        if (!confirm("変更はありません。このまま確定しますか？")) return;
+      } else {
+        if (!confirm(cancelIds.length + "件のレッスンのチェックが外れています。\nこれらをキャンセルしてもよろしいですか？")) return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "処理中...";
+
+      google.script.run
+        .withSuccessHandler(function (result) {
+          if (result.success) {
+            document.getElementById('main').innerHTML = `
+                <h2 style="color:#28a745;">確認完了</h2>
+                <p style="text-align:center;">スケジュールの確認が完了しました。<br>ご協力ありがとうございました。</p>
+              `;
+          } else {
+            msg.textContent = "エラー: " + result.message;
+            btn.disabled = false;
+            btn.textContent = "上記の内容で確定する";
+          }
+        })
+        .withFailureHandler(function (e) {
+          msg.textContent = "通信エラーが発生しました。";
+          btn.disabled = false;
+          btn.textContent = "上記の内容で確定する";
+        })
+        .processMonthlyUpdate(cancelIds);
+    }
+  </script>
+</body>
+
+</html>
