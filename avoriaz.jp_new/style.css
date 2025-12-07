@@ -145,6 +145,8 @@ body.admin-bar .site-header { top: 32px; }
 .sns-link:hover { background-color: #fff; color: var(--color-primary); border-color: #fff; }
 .sns-link svg { fill: currentColor; width: 18px; height: 18px; }
 .sns-link.instagram:hover { color: #C13584; } .sns-link.x-twitter:hover { color: #000; }
+/* ★追加: Facebook用スタイル */
+.sns-link.facebook:hover { color: #1877F2; }
 
 /* =========================================
    5. フォーム共通スタイル (Forms & CF7)
@@ -355,7 +357,6 @@ h2.form-title { text-align: center; margin-bottom: 40px; color: #333; font-size:
 /* =========================================
    12. フェードインアニメーション (Animation)
    ========================================= */
-/* ★追加したアニメーションCSS */
 .fade-in-up {
     opacity: 0;
     transform: translateY(20px);
@@ -370,54 +371,43 @@ h2.form-title { text-align: center; margin-bottom: 40px; color: #333; font-size:
     }
 }
 
-
 /* reCAPTCHAバッジを非表示 */
 .grecaptcha-badge { 
     visibility: hidden; 
 }
 
-
-
 /* -------------------------------------------------
    同意チェックボックスを中央寄せにする設定
    ------------------------------------------------- */
-
-/* Contact Form 7 の承諾確認ボックスのラッパーをターゲットにする */
 .wpcf7-acceptance {
-    display: block; /* ブロック要素にして幅を持たせる */
-    text-align: center; /* インライン要素(チェックボックス+文字)を中央に */
-    margin: 20px auto; /* 上下に余白、左右は自動で中央揃え */
+    display: block; 
+    text-align: center;
+    margin: 20px auto; 
 }
-
-/* チェックボックス本体とラベルの配置調整 */
 .wpcf7-acceptance label {
-    display: inline-flex; /* フレックスボックスで横並び */
-    align-items: center; /* 垂直方向の中央揃え */
-    justify-content: center; /* 水平方向の中央揃え */
-    gap: 8px; /* チェックボックスと文字の間隔 */
-    cursor: pointer; /* マウスカーソルを指マークに */
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 8px; 
+    cursor: pointer; 
 }
-
-/* チェックボックス自体のスタイル微調整 */
 .wpcf7-acceptance input[type="checkbox"] {
-    margin: 0; /* デフォルトのマージンをリセット */
-    width: 18px; /* 少し大きくして押しやすく */
+    margin: 0; 
+    width: 18px; 
     height: 18px;
     cursor: pointer;
 }
-
-/* 同意文言のスタイル */
 .wpcf7-acceptance span.wpcf7-list-item-label {
-    font-size: 1rem; /* 文字サイズ */
-    font-weight: bold; /* 太字で見やすく */
+    font-size: 1rem; 
+    font-weight: bold; 
     color: #333;
 }
 
 /* --- 日付入力欄の手動入力禁止 --- */
 .wpcf7 input.disable-input {
-    pointer-events: none;       /* クリックを無効化 */
-    background-color: #f9f9f9;  /* 薄いグレーにして入力不可っぽく見せる */
-    color: #333;                /* 文字は読みやすく */
+    pointer-events: none; 
+    background-color: #f9f9f9; 
+    color: #333; 
     cursor: default;
     border: 1px solid #ddd;
 }
