@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      /* --- 全体設定 --- */
+      body { font-family: "Helvetica Neue", Arial, sans-serif; margin: 0; padding: 10px; color: #333; font-size: 13px; background-color: #fdfdfd; }
+      h3 { margin: 5px 0 15px; color: #2C5F2D; font-size: 16px; }
+
+      /* --- コントロールバー --- */
+      .control-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: 15px; border-bottom: 2px solid #2C5F2D; padding-bottom: 10px; gap: 10px; }
+      .tab-nav { display: flex; gap: 5px; }
+      .tab-btn { padding: 8px 16px; cursor: pointer; background: #eee; border: none; border-radius: 4px; font-weight: bold; color: #666; transition: all 0.2s; font-size: 14px; }
+      .tab-btn.active { background: #2C5F2D; color: white; }
+      .date-nav { display: flex; align-items: center; gap: 5px; background: #f0f8f0; padding: 5px 10px; border-radius: 20px; }
+      .nav-btn { background: white; border: 1px solid #ccc; cursor: pointer; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #2C5F2D; }
+      .nav-btn:hover { background: #e0e0e0; }
+      .date-display-wrapper { position: relative; }
+      #date-picker { border: none; background: transparent; font-size: 16px; font-weight: bold; color: #333; width: 130px; text-align: center; cursor: pointer; }
+      .today-btn { font-size: 12px; padding: 4px 8px; background: #fff; border: 1px solid #2C5F2D; color: #2C5F2D; border-radius: 4px; cursor: pointer; }
+      .tab-content { display: none; }
+      .tab-content.active { display: block; }
+      #loading { text-align: center; margin-top: 50px; font-size: 14px; }
+      #error-msg { color: red; text-align: center; margin-top: 20px; }
+
+      /* =========================================
+         カレンダー用スタイル (宿泊)
+         ========================================= */
+      .matrix-container { overflow-x: auto; overflow-y: visible; border: 1px solid #ccc; position: relative; background: #fff; width: 100%; }
+      table.calendar-table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
+      .calendar-table th, .calendar-table td { border-right: 1px solid #ddd; border-bottom: 1px solid #ddd; text-align: center; padding: 0; height: 60px; box-sizing: border-box; vertical-align: top; }
+      
+      /* 幅制御用クラス */
+      .w-narrow { width: 50px; min-width: 50px; }
+      .w-wide { width: 160px; min-width: 160px; }
+
+      .calendar-table thead th:first-child { position: sticky; top: 0; left: 0; z-index: 50; background-color: #2C5F2D; color: white; width: 100px; min-width: 100px; border-right: 1px solid #ccc; vertical-align: middle; }
+      .calendar-table thead th { background-color: #2C5F2D; color: white; position: sticky; top: 0; z-index: 40; font-weight: normal; font-size: 11px; height: 45px; vertical-align: middle; }
+      .calendar-table tbody th { background-color: #f8f8f8; position: sticky; left: 0; z-index: 30; width: 100px; min-width: 100px; border-right: 2px solid #bbb; font-weight: bold; color: #444; font-size: 13px; vertical-align: middle; }
+
+      .col-today { background-color: #fffde7; }
+      .col-sat { background-color: #f0f8ff; }
+      .col-sun { background-color: #fff0f5; }
+      th.sat { background-color: #58805B; color: #aaddff; }
+      th.sun { background-color: #58805B; color: #ffaaaa; }
+      th.today { background-color: #FFEB3B; color: #333; font-weight: bold; border-bottom: 4px solid #D32F2F; }
+
+      .lane-container { display: flex; flex-direction: column; justify-content: center; width: 100%; min-height: 60px; padding: 2px 0; }
+      .res-spacer { height: 24px; margin-bottom: 2px; background: transparent; }
+      .res-bar { height: 24px; margin-bottom: 2px; font-size: 13px; line-height: 24px; white-space: nowrap; overflow: visible; position: relative; z-index: 10; color: #222; font-weight: 600; box-sizing: border-box; cursor: pointer; transition: opacity 0.2s; }
+      .res-bar:hover { opacity: 0.8; }
+
+      .bar-start { width: 50% !important; margin-left: 50% !important; border-radius: 4px 0 0 4px; border-left: 4px solid rgba(0,0,0,0.2); padding-left: 6px; z-index: 20; }
+      .bar-end { width: 50% !important; margin-right: 50% !important; border-radius: 0 4px 4px 0; overflow: hidden; }
+      .bar-middle { width: calc(100% + 2px) !important; margin-left: -1px !important; border-radius: 0; overflow: hidden; }
+      .bar-single { width: 50% !important; margin-left: 25% !important; border-radius: 4px; border-left: 4px solid rgba(0,0,0,0.2); padding-left: 6px; z-index: 20; }
+
+      .status-confirmed { background-color: #FFE0B2; border-left: 4px solid #EF6C00; }
+      .status-pool { background-color: #B3E5FC; border-left: 4px solid #0288D1; }
+      .bar-middle.status-confirmed, .bar-end.status-confirmed { border-left: none; }
+      .bar-middle.status-pool, .bar-end.status-pool { border-left: none; }
+      .pax-badge { background-color: rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.1); border-radius: 3px; padding: 0 4px; margin-left: 4px; font-size: 11px; }
+
+      /* =========================================
+         ★サウナ予約用スタイル
+         ========================================= */
+      .sauna-table { width: max-content; table-layout: fixed; }
+      .sauna-table th, .sauna-table td { border-right: 1px solid #ddd; border-bottom: 1px solid #eee; text-align: center; padding: 0; box-sizing: border-box; }
+      
+      .sauna-table thead th { 
+        height: 40px; 
+        width: 140px; min-width: 140px; 
+        position: sticky; top: 0; z-index: 40; 
+        background-color: #2C5F2D; color: white;
+      }
+      .sauna-table thead th:first-child {
+        width: 60px; min-width: 60px;
+        position: sticky; top: 0; left: 0; z-index: 60;
+        background-color: #2C5F2D; color: white;
+        border-right: 1px solid #ccc;
+      }
+      .sauna-table tbody th { 
+        width: 60px; min-width: 60px;
+        height: 40px; 
+        vertical-align: top;
+        text-align: center;
+        padding-top: 5px;
+        font-size: 11px; color: #555; background-color: #f8f8f8;
+        position: sticky; left: 0; z-index: 50;
+        border-right: 2px solid #bbb;
+      }
+      
+      .sauna-cell { position: relative; width: 100%; height: 40px; } 
+      .sauna-col-bg { 
+        background-image: linear-gradient(to bottom, #eee 1px, transparent 1px);
+        background-size: 100% 40px; 
+        height: 760px; /* 19時間 * 40px */
+        position: relative;
+      }
+
+      /* サウナ予約バー */
+      .sauna-bar {
+        position: absolute;
+        left: 4px; right: 4px;
+        border: 1px solid rgba(0,0,0,0.1); 
+        border-radius: 4px;
+        font-size: 12px;
+        color: #333;
+        font-weight: bold;
+        padding: 2px 4px;
+        overflow: hidden;
+        z-index: 10;
+        cursor: pointer;
+        box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center;
+        align-items: center; 
+        line-height: 1.2;
+      }
+      .sauna-bar:hover { opacity: 0.9; z-index: 20; }
+
+      /* =========================================
+         リスト用スタイル
+         ========================================= */
+      .list-container { max-width: 1200px; width: 95%; margin: 0 auto; background: #fff; padding: 20px; border: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+      .list-header { margin-bottom: 15px; border-bottom: 2px solid #2C5F2D; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+      .list-title { font-size: 18px; font-weight: bold; color: #2C5F2D; }
+      
+      .print-btn { background-color: #555; color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+      .print-btn:hover { background-color: #333; }
+
+      table.list-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      .list-table th { background-color: #f4f8f4; color: #2C5F2D; text-align: left; padding: 8px; border-bottom: 2px solid #ddd; white-space: nowrap; font-size: 13px; }
+      .list-table td { padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+      .list-table tr:nth-child(even) { background-color: #fcfcfc; }
+      
+      .dinner-req { color: #d32f2f; font-weight: bold; }
+      .dinner-not { color: #888; }
+      
+      .stay-badge { font-size: 11px; color: #fff; background-color: #78909C; padding: 2px 6px; border-radius: 10px; white-space: nowrap; display: inline-block; }
+      .stay-badge.today-only { background-color: #8D6E63; } 
+      
+      .time-badge { font-size: 13px; font-weight: bold; padding: 2px 6px; border-radius: 4px; white-space: nowrap; display: inline-block; margin-right: 6px; }
+      .time-orange { color: #E65100; background-color: #FFF3E0; border: 1px solid #FFB74D; }
+      .time-blue { color: #0277BD; background-color: #E1F5FE; border: 1px solid #4FC3F7; }
+
+      .talk-icon { cursor: pointer; font-size: 18px; color: #0288D1; margin-left: 5px; vertical-align: middle; }
+      .talk-icon:hover { opacity: 0.7; }
+      .mail-icon { cursor: pointer; font-size: 18px; color: #2E7D32; margin: 0 4px; vertical-align: middle; }
+      .mail-icon:hover { opacity: 0.7; }
+
+      /* ポップアップモーダル */
+      .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+      .modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 14px; line-height: 1.6; position: relative; }
+      .modal-title { font-weight: bold; font-size: 16px; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; color: #2C5F2D; }
+      .modal-close-btn { position: absolute; top: 10px; right: 15px; cursor: pointer; font-weight: bold; font-size: 20px; border: none; background: none; color: #666; }
+
+      .detail-list { display: grid; grid-template-columns: 100px 1fr; gap: 8px 15px; }
+      .detail-dt { font-weight: bold; color: #555; text-align: right; border-right: 2px solid #eee; padding-right: 10px; }
+      .detail-dd { margin: 0; color: #222; }
+      .detail-row-divider { grid-column: 1 / -1; border-bottom: 1px dashed #eee; margin: 5px 0; }
+
+      /* 合計欄 */
+      .total-box { margin-top: 30px; padding: 20px; background-color: #f9f9f9; border: 1px solid #ddd; border-left: 5px solid #2C5F2D; }
+      .total-header { font-weight: bold; margin-bottom: 15px; font-size: 15px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
+      .total-row { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; margin-bottom: 10px; font-size: 14px; }
+      .total-label { width: 100px; font-weight: bold; color: #555; }
+      .total-item { margin-right: 15px; }
+      .total-num { font-weight: bold; font-size: 18px; margin: 0 3px; }
+      .row-dinner { color: #d32f2f; font-weight: bold; border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px; }
+      .row-dinner .total-label { color: #d32f2f; }
+      .row-dinner .total-num { font-size: 20px; }
+
+      @media print {
+        @page { size: A4 landscape; margin: 10mm; }
+        body { background-color: white; padding: 0; margin: 0; }
+        .control-bar, .tab-nav, .date-nav, .print-btn { display: none !important; }
+        #tab-calendar, #tab-sauna { display: none !important; }
+        #tab-list { display: block !important; }
+        .list-container { box-shadow: none; border: none; padding: 0; margin: 0; width: 100% !important; max-width: 100% !important; }
+        .list-title { font-size: 16px; margin-bottom: 10px; }
+        table.list-table { font-size: 11px; }
+        .list-table th, .list-table td { padding: 5px 4px; }
+        .total-box { margin-top: 20px; padding: 10px; break-inside: avoid; }
+        .stay-badge { border: 1px solid #78909C; color: #000; background: #fff; }
+        .stay-badge.today-only { border: 1px solid #8D6E63; color: #000; background: #fff; }
+      }
+
+    </style>
+  </head>
+  <body>
+    
+    <div id="control-bar" class="control-bar">
+      <nav class="tab-nav">
+        <button id="btn-tab-cal" class="tab-btn active" onclick="switchTab('calendar')">宿泊カレンダー</button>
+        <button id="btn-tab-list" class="tab-btn" onclick="switchTab('list')">本日の宿泊者</button>
+        <button id="btn-tab-sauna" class="tab-btn" onclick="switchTab('sauna')">サウナ予約</button>
+      </nav>
+
+      <div class="date-nav">
+        <button class="nav-btn" onclick="moveDate(-1)">＜</button>
+        <div class="date-display-wrapper">
+          <input type="date" id="date-picker" onchange="jumpToDate(this.value)">
+        </div>
+        <button class="nav-btn" onclick="moveDate(1)">＞</button>
+        <button class="today-btn" onclick="jumpToToday()">今日</button>
+      </div>
+    </div>
+
+    <div id="loading">読み込み中...</div>
+    <div id="error-msg"></div>
+
+    <div id="tab-calendar" class="tab-content active">
+      <div class="matrix-container">
+        <table id="matrixTable" class="calendar-table" style="display:none;">
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-sauna" class="tab-content">
+      <div class="matrix-container" style="max-height:85vh; overflow-y:auto;">
+        <table id="saunaTable" class="calendar-table sauna-table" style="display:none;">
+          <thead id="saunaHead"></thead>
+          <tbody id="saunaBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-list" class="tab-content">
+      <div class="list-container">
+        <div class="list-header">
+          <div class="list-title"><span id="list-date-display"></span> の宿泊者</div>
+          <button class="print-btn" onclick="window.print()">🖨️ 印刷</button>
+        </div>
+        
+        <table class="list-table">
+          <thead>
+            <tr>
+              <th width="10%">お部屋</th>
+              <th width="23%">お名前</th>
+              <th width="6%" style="text-align:center;">IN</th>
+              <th width="8%" style="text-align:center;">泊数</th>
+              <th width="5%" style="text-align:center;">大人</th>
+              <th width="5%" style="text-align:center;">小人</th>
+              <th width="5%" style="text-align:center;">幼児<br>(食有)</th>
+              <th width="5%" style="text-align:center;">幼児<br>(食無)</th>
+              <th width="6%" style="text-align:center;">夕食</th>
+              <th width="4%" style="text-align:center;">詳細</th>
+              <th width="26%">メモ</th>
+            </tr>
+          </thead>
+          <tbody id="listBody"></tbody>
+        </table>
+
+        <div class="total-box">
+          <div class="total-header">■ 合計人数</div>
+          <div class="total-row">
+            <span class="total-label">全体</span>
+            <div class="total-item">大人(全) <span id="sum-adult-total" class="total-num">0</span>名</div>
+            <div class="total-item">小人(全) <span id="sum-child-total" class="total-num">0</span>名</div>
+            <div class="total-item">幼児(全) <span id="sum-toddler-total" class="total-num">0</span>名</div>
+          </div>
+          <div class="total-row row-dinner">
+            <span class="total-label">【食事あり】</span>
+            <div class="total-item">大人 <span id="sum-adult-dinner" class="total-num">0</span>名</div>
+            <div class="total-item">小人 <span id="sum-child-dinner" class="total-num">0</span>名</div>
+            <div class="total-item">幼児 <span id="sum-toddler-dinner" class="total-num">0</span>名</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="detail-modal" class="modal-overlay" onclick="closeDetail()">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="modal-close-btn" onclick="closeDetail()">×</button>
+        <div class="modal-title" id="modal-title">詳細</div>
+        <div id="modal-text"></div>
+      </div>
+    </div>
+
+    <script>
+      let globalData = null;
+      let currentDate = new Date();
+      let currentTab = 'calendar';
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const isWeeklyMode = (urlParams.get('mode') === 'weekly');
+
+      window.onload = function() {
+        updateDatePicker(currentDate);
+        if(isWeeklyMode) {
+          document.getElementById('control-bar').style.display = 'none';
+          document.querySelector('h3').textContent = '📅 今週の予約状況';
+        }
+        google.script.run
+          .withSuccessHandler(initApp)
+          .withFailureHandler(showError)
+          .getDataForMatrix();
+      };
+
+      function initApp(data) {
+        globalData = data;
+        renderCurrentView();
+        document.getElementById('loading').style.display = 'none';
+      }
+
+      function switchTab(tabName) {
+        currentTab = tabName;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        const activeBtn = document.getElementById('btn-tab-' + (tabName === 'calendar' ? 'cal' : (tabName === 'sauna' ? 'sauna' : 'list')));
+        if(activeBtn) activeBtn.classList.add('active');
+
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById('tab-' + tabName).classList.add('active');
+        renderCurrentView();
+      }
+
+      function jumpToToday() {
+        currentDate = new Date();
+        updateDatePicker(currentDate);
+        renderCurrentView();
+      }
+
+      function jumpToDate(dateStr) {
+        if(dateStr) {
+          currentDate = new Date(dateStr);
+          renderCurrentView();
+        }
+      }
+
+      function moveDate(direction) {
+        const days = (currentTab === 'list') ? 1 : 7;
+        currentDate.setDate(currentDate.getDate() + (direction * days));
+        updateDatePicker(currentDate);
+        renderCurrentView();
+      }
+
+      function updateDatePicker(d) {
+        const y = d.getFullYear();
+        const m = ('0' + (d.getMonth()+1)).slice(-2);
+        const dd = ('0' + d.getDate()).slice(-2);
+        document.getElementById('date-picker').value = `${y}-${m}-${dd}`;
+      }
+
+      function renderCurrentView() {
+        if (!globalData) return;
+        if (currentTab === 'calendar') {
+          renderGantt(globalData, currentDate);
+        } else if (currentTab === 'sauna') {
+          renderSauna(globalData, currentDate);
+        } else {
+          renderDailyList(globalData, currentDate);
+        }
+      }
+
+      function normalizeDate(val) {
+        if (!val) return "";
+        let s = String(val).split('T')[0].trim().replace(/-/g, '/');
+        const parts = s.split('/');
+        if (parts.length === 3) {
+          const y = parts[0];
+          const m = ('0' + parts[1]).slice(-2);
+          const d = ('0' + parts[2]).slice(-2);
+          return `${y}/${m}/${d}`;
+        }
+        return s;
+      }
+      function toYMD(d) {
+        return `${d.getFullYear()}/${('0'+(d.getMonth()+1)).slice(-2)}/${('0'+d.getDate()).slice(-2)}`;
+      }
+
+      function formatLabel(r) {
+        let s = (r.custName || 'ゲスト') + ' 様';
+        if (r.group) s += ' (' + r.group + ')';
+        if (r.agent && r.agent.indexOf('楽天') !== -1) {
+          s += ' ｜ 楽天';
+        }
+        return s;
+      }
+
+      function showDetail(event, id) {
+        event.stopPropagation();
+        const target = globalData.reservations.find(r => String(r.id) === String(id));
+        if (target && target.bookingDetail) {
+          document.getElementById('modal-title').textContent = '予約詳細';
+          document.getElementById('modal-text').innerHTML = target.bookingDetail.replace(/\n/g, '<br>');
+          document.getElementById('detail-modal').style.display = 'flex';
+        }
+      }
+      
+      function showInquiry(event, id) {
+        event.stopPropagation();
+        const target = globalData.reservations.find(r => String(r.id) === String(id));
+        if (target && target.inquiries) {
+          document.getElementById('modal-title').textContent = 'お問い合わせ内容';
+          document.getElementById('modal-text').innerHTML = target.inquiries.replace(/\n/g, '<br>');
+          document.getElementById('detail-modal').style.display = 'flex';
+        }
+      }
+
+      function showCalendarDetail(event, id) {
+        event.stopPropagation();
+        const r = globalData.reservations.find(r => String(r.id) === String(id));
+        if (!r) return;
+
+        const timeStr = r.checkInTime ? r.checkInTime : '-';
+        const planStr = r.plan || '-';
+        const routeStr = r.agent || '-';
+        const detailStr = r.bookingDetail ? r.bookingDetail.replace(/\n/g, '<br>') : '-';
+        
+        let inquirySection = '';
+        if (r.inquiries) {
+          const inqText = r.inquiries.replace(/\n/g, '<br>');
+          inquirySection = `
+            <div class="detail-row-divider"></div>
+            <div class="detail-dt">お問い合わせ</div>
+            <div class="detail-dd">${inqText}</div> `;
+        }
+
+        const html = `
+          <div class="detail-list">
+            <div class="detail-dt">予約ID</div>
+            <div class="detail-dd">${r.id}</div>
+            <div class="detail-dt">日程</div>
+            <div class="detail-dd">${r.checkIn} ～ ${r.checkOut} <span style="margin-left:10px; color:#E65100; font-weight:bold;">${timeStr} IN</span></div>
+            <div class="detail-dt">お名前</div>
+            <div class="detail-dd" style="font-weight:bold; font-size:15px;">${r.custName} 様</div>
+            <div class="detail-dt">人数</div>
+            <div class="detail-dd">
+              合計 <b>${r.pax}</b> 名 <br>
+              <span style="font-size:12px; color:#555;">(大人:${r.adults}, 小人:${r.child}, 幼児食有:${r.toddlerM}, 幼児食無:${r.toddlerN})</span>
+            </div>
+            <div class="detail-row-divider"></div>
+            <div class="detail-dt">プラン</div>
+            <div class="detail-dd">${planStr}</div>
+            <div class="detail-dt">予約経路</div>
+            <div class="detail-dd">${routeStr}</div>
+            <div class="detail-dt">予約詳細</div>
+            <div class="detail-dd">${detailStr}</div>
+            ${inquirySection}
+          </div>
+        `;
+        document.getElementById('modal-title').textContent = '予約情報';
+        document.getElementById('modal-text').innerHTML = html;
+        document.getElementById('detail-modal').style.display = 'flex';
+      }
+
+      function closeDetail() {
+        document.getElementById('detail-modal').style.display = 'none';
+      }
+
+      // ==========================================
+      // サウナ予約
+      // ==========================================
+      function renderSauna(data, baseDate) {
+        const saunaRooms = data.rooms.filter(r => r.name.indexOf('サウナ') !== -1);
+        if (saunaRooms.length === 0) {
+          document.getElementById('saunaTable').innerHTML = '<tr><td style="padding:20px;">サウナ施設の登録がありません</td></tr>';
+          document.getElementById('saunaTable').style.display = 'table';
+          return;
+        }
+
+        const today = new Date(); today.setHours(0,0,0,0);
+        let start, end;
+        if (isWeeklyMode) {
+          start = new Date(today);
+          end = new Date(today);
+          end.setDate(end.getDate() + 7);
+        } else {
+          // ★修正: サウナ期間 (-3～+30)
+          const SAUNA_PAST = 3;
+          const SAUNA_FUTURE = 30;
+          start = new Date(baseDate); start.setDate(start.getDate() - SAUNA_PAST);
+          end = new Date(baseDate); end.setDate(end.getDate() + SAUNA_FUTURE);
+        }
+
+        const dateArray = [];
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          dateArray.push(toYMD(d));
+        }
+
+        const startHour = 5;
+        const endHour = 24; 
+        const hourHeight = 40; 
+
+        let headHtml = '<tr><th style="width:60px;">時間</th>';
+        dateArray.forEach(dStr => {
+          const parts = dStr.split('/');
+          const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
+          const day = dateObj.getDay();
+          const todayStr = toYMD(new Date());
+          let c = (dStr === todayStr) ? 'today' : (day === 0 ? 'sun' : (day === 6 ? 'sat' : ''));
+          headHtml += `<th class="${c}">${parseInt(parts[1])}/${parseInt(parts[2])}<br>${['日','月','火','水','木','金','土'][day]}</th>`;
+        });
+        headHtml += '</tr>';
+        document.getElementById('saunaHead').innerHTML = headHtml;
+
+        let bodyHtml = '<tr>';
+        
+        bodyHtml += '<th style="vertical-align:top; background:#f8f8f8; padding:0;">';
+        for (let h = startHour; h < endHour; h++) {
+          bodyHtml += `<div style="height:${hourHeight}px; border-bottom:1px solid #ddd; text-align:center; padding-top:2px; font-size:11px; color:#555;">${h}:00</div>`;
+        }
+        bodyHtml += '</th>';
+
+        dateArray.forEach(dStr => {
+          const parts = dStr.split('/');
+          const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
+          const dayOfWeek = dateObj.getDay();
+          const todayStr = toYMD(new Date());
+          let bgClass = (dStr === todayStr) ? 'col-today' : (dayOfWeek === 0 ? 'col-sun' : (dayOfWeek === 6 ? 'col-sat' : ''));
+          
+          let cellContent = '';
+          
+          saunaRooms.forEach((room, rIdx) => {
+            const roomRes = data.reservations.filter(r => r.roomId == room.id);
+            roomRes.forEach(r => {
+              if (normalizeDate(r.checkIn) === dStr) {
+                let inH = 0, inM = 0;
+                let outH = 0, outM = 0;
+                
+                if (r.checkInTime) {
+                  const t = r.checkInTime.split(':');
+                  inH = parseInt(t[0]); inM = parseInt(t[1]);
+                }
+                if (r.checkOutTime) {
+                  const t = r.checkOutTime.split(':');
+                  outH = parseInt(t[0]); outM = parseInt(t[1]);
+                } else {
+                  outH = inH + 2; 
+                }
+
+                if (inH >= startHour && inH < endHour) {
+                  const topPx = (inH - startHour) * hourHeight + (inM / 60) * hourHeight;
+                  const durationMin = (outH * 60 + outM) - (inH * 60 + inM);
+                  const heightPx = (durationMin / 60) * hourHeight;
+
+                  const leftOffset = rIdx * 10;
+                  const widthPct = 90 - (rIdx * 5); 
+
+                  const colorClass = (r.status === '確定') ? 'status-confirmed' : 'status-pool';
+                  
+                  const timeLabel = `${inH}:${String(inM).padStart(2,'0')} - ${outH}:${String(outM).padStart(2,'0')}`;
+                  const label = `<div>${r.custName} 様</div><div style="font-size:10px; font-weight:normal;">${timeLabel}</div>`;
+                  
+                  cellContent += `<div class="sauna-bar ${colorClass}" 
+                    style="top:${topPx}px; height:${heightPx}px; left:${leftOffset}%; width:${widthPct}%;" 
+                    onclick="showCalendarDetail(event, '${r.id}')">
+                    ${label}
+                  </div>`;
+                }
+              }
+            });
+          });
+
+          bodyHtml += `<td class="${bgClass}" style="vertical-align:top; height:${(endHour-startHour)*hourHeight}px; position:relative;">
+            <div class="sauna-col-bg">${cellContent}</div>
+          </td>`;
+        });
+        
+        bodyHtml += '</tr>';
+        
+        document.getElementById('saunaBody').innerHTML = bodyHtml;
+        document.getElementById('saunaTable').style.display = 'table';
+      }
+
+      function renderDailyList(data, targetDate) {
+        const targetStr = toYMD(targetDate);
+        document.getElementById('list-date-display').textContent = targetStr;
+
+        const todaysGuests = data.reservations.filter(r => {
+          const inDate = normalizeDate(r.checkIn);
+          const outDate = normalizeDate(r.checkOut);
+          const isDateMatch = (inDate <= targetStr && targetStr < outDate);
+          const isStatusMatch = (r.status === '確定');
+          return isDateMatch && isStatusMatch;
+        });
+
+        todaysGuests.sort((a, b) => String(a.roomId).localeCompare(String(b.roomId)));
+
+        const roomMap = {};
+        data.rooms.forEach(r => roomMap[r.id] = r.name);
+
+        const tbody = document.getElementById('listBody');
+        let html = '';
+        
+        let sumAdult = 0;
+        let sumAdultDinner = 0;
+        let sumChild = 0;
+        let sumToddlerM = 0;
+        let sumToddlerN = 0;
+
+        todaysGuests.forEach(r => {
+          const roomName = roomMap[r.roomId] || r.roomId;
+          if (roomName.indexOf('サウナ') !== -1) return;
+
+          const inTime = new Date(normalizeDate(r.checkIn)).getTime();
+          const targetTime = new Date(targetStr).getTime();
+          const outTime = new Date(normalizeDate(r.checkOut)).getTime();
+          
+          const diffDays = Math.round((targetTime - inTime) / (1000 * 60 * 60 * 24)) + 1;
+          const totalStay = Math.round((outTime - inTime) / (1000 * 60 * 60 * 24));
+
+          let stayBadge = '';
+          if (totalStay === 1) {
+            stayBadge = '<span class="stay-badge today-only">当日のみ</span>';
+          } else {
+            stayBadge = `<span class="stay-badge">${diffDays}／${totalStay} 泊目</span>`;
+          }
+
+          let timeCellContent = '';
+          if (diffDays === 1 && r.checkInTime && r.checkInTime !== '') {
+            const timeStr = r.checkInTime;
+            const hour = parseInt(timeStr.split(':')[0], 10);
+            const colorClass = (hour >= 18) ? 'time-orange' : 'time-blue';
+            timeCellContent = `<span class="time-badge ${colorClass}">${timeStr}</span>`;
+          }
+
+          let isDinnerReq = true;
+          if (r.dinnerSkip) {
+            if (diffDays === 1) isDinnerReq = false; 
+            else isDinnerReq = true;
+          } else {
+            isDinnerReq = true;
+          }
+          const dinnerText = isDinnerReq 
+            ? '<span class="dinner-req">必要</span>' 
+            : '<span class="dinner-not">不要</span>';
+          
+          const displayName = formatLabel(r);
+          
+          let detailIcons = '';
+          if (r.bookingDetail) {
+            detailIcons += `<span class="talk-icon" onclick="showDetail(event, '${r.id}')">💬</span>`;
+          }
+          if (r.inquiries) {
+            detailIcons += `<span class="mail-icon" onclick="showInquiry(event, '${r.id}')">✉️</span>`;
+          }
+
+          html += `<tr>
+            <td>${roomName}</td>
+            <td>${displayName}</td>
+            <td style="text-align:center;">${timeCellContent}</td>
+            <td style="text-align:center;">${stayBadge}</td>
+            <td style="text-align:center;">${r.adults}</td>
+            <td style="text-align:center;">${r.child}</td>
+            <td style="text-align:center;">${r.toddlerM}</td>
+            <td style="text-align:center;">${r.toddlerN}</td>
+            <td style="text-align:center;">${dinnerText}</td>
+            <td style="text-align:center;">${detailIcons}</td>
+            <td style="font-size:12px; color:#555;">${r.memo || ''}</td>
+          </tr>`;
+
+          sumAdult += r.adults;
+          sumChild += r.child;
+          sumToddlerM += r.toddlerM;
+          sumToddlerN += r.toddlerN;
+          if (isDinnerReq) sumAdultDinner += r.adults;
+        });
+
+        if (html === '') {
+          html = '<tr><td colspan="11" style="text-align:center; padding:20px;">本日の宿泊予定はありません</td></tr>';
+        }
+
+        tbody.innerHTML = html;
+        document.getElementById('sum-adult-total').textContent = sumAdult;
+        document.getElementById('sum-child-total').textContent = sumChild;
+        document.getElementById('sum-toddler-total').textContent = (sumToddlerM + sumToddlerN);
+
+        document.getElementById('sum-adult-dinner').textContent = sumAdultDinner;
+        document.getElementById('sum-child-dinner').textContent = sumChild; 
+        document.getElementById('sum-toddler-dinner').textContent = sumToddlerM;
+      }
+
+      // カレンダー描画
+      function renderGantt(data, baseDate) {
+        try {
+          const rooms = data.rooms.filter(r => r.name.indexOf('サウナ') === -1);
+          rooms.push({ id: 'VIRTUAL_POOL_ROW', name: '仮予約' });
+
+          const resList = data.reservations.map(r => {
+            let assignedRoomId = r.roomId;
+            if (r.status === 'プール') {
+              assignedRoomId = 'VIRTUAL_POOL_ROW';
+            }
+            return {
+              ...r,
+              checkIn: normalizeDate(r.checkIn),
+              checkOut: normalizeDate(r.checkOut),
+              roomId: assignedRoomId
+            };
+          });
+          
+          const today = new Date(); today.setHours(0,0,0,0);
+          let start, end;
+          if (isWeeklyMode) {
+            start = new Date(today);
+            end = new Date(today);
+            end.setDate(end.getDate() + 7);
+          } else {
+            start = new Date(baseDate); start.setDate(start.getDate() - data.range.past);
+            end = new Date(baseDate); end.setDate(end.getDate() + data.range.future);
+          }
+          const todayStr = toYMD(new Date());
+
+          const dateArray = [];
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            dateArray.push(toYMD(d));
+          }
+
+          const activeDates = new Set();
+          resList.forEach(r => {
+            activeDates.add(r.checkIn);
+            activeDates.add(r.checkOut);
+          });
+
+          let headHtml = '<tr><th>部屋</th>';
+          dateArray.forEach(dStr => {
+            const parts = dStr.split('/');
+            const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
+            const day = dateObj.getDay();
+            let c = (dStr === todayStr) ? 'today' : (day === 0 ? 'sun' : (day === 6 ? 'sat' : ''));
+            
+            let widthClass = activeDates.has(dStr) ? 'w-wide' : 'w-narrow';
+            headHtml += `<th class="${c} ${widthClass}">${parseInt(parts[1])}/${parseInt(parts[2])}<br>${['日','月','火','水','木','金','土'][day]}</th>`;
+          });
+          document.getElementById('tableHead').innerHTML = headHtml + '</tr>';
+
+          let bodyHtml = '';
+          rooms.forEach(room => {
+            let rowStyle = (room.id === 'VIRTUAL_POOL_ROW') ? 'background-color:#f0f8ff;' : '';
+            bodyHtml += `<tr><th style="${rowStyle}">${room.name}</th>`;
+            
+            let roomRes = resList.filter(r => r.roomId == room.id);
+            roomRes.sort((a,b) => a.checkIn.localeCompare(b.checkIn));
+
+            let lanes = []; 
+            roomRes.forEach(r => {
+              let placed = false;
+              for(let i=0; i<lanes.length; i++) {
+                let lastRes = lanes[i][lanes[i].length - 1];
+                if (r.checkIn > lastRes.checkOut) { 
+                  lanes[i].push(r);
+                  r.laneIndex = i;
+                  placed = true;
+                  break;
+                }
+              }
+              if(!placed) {
+                lanes.push([r]);
+                r.laneIndex = lanes.length - 1;
+              }
+            });
+            let maxLanes = lanes.length > 0 ? lanes.length : 1; 
+
+            for (let i = 0; i < dateArray.length; i++) {
+              const currDate = dateArray[i];
+              const parts = currDate.split('/');
+              const day = new Date(parts[0], parts[1]-1, parts[2]).getDay();
+              let bgClass = (currDate === todayStr) ? 'col-today' : (day === 0 ? 'col-sun' : (day === 6 ? 'col-sat' : ''));
+              
+              let widthClass = activeDates.has(currDate) ? 'w-wide' : 'w-narrow';
+
+              let cellHtml = `<div class="lane-container">`;
+              for(let l=0; l<maxLanes; l++) {
+                const target = roomRes.find(r => r.laneIndex === l && currDate >= r.checkIn && currDate <= r.checkOut);
+                if (target) {
+                  const color = target.status === '確定' ? 'status-confirmed' : 'status-pool';
+                  let barClass = 'res-bar ' + color;
+                  
+                  let isStart = (currDate === target.checkIn);
+                  let isEnd = (currDate === target.checkOut);
+                  
+                  if (isStart && isEnd) barClass += ' bar-single'; 
+                  else if (isStart) barClass += ' bar-start';
+                  else if (isEnd) barClass += ' bar-end';
+                  else barClass += ' bar-middle';
+
+                  let label = "";
+                  if (isStart || (i === 0 && !isEnd)) { 
+                     let txt = formatLabel(target); 
+                     if (target.pax > 0) txt += ` <span class="pax-badge">${target.pax}名</span>`;
+                     if (target.inquiries) {
+                         txt += ` <span class="mail-icon" style="font-size:14px; margin-left:4px;">✉️</span>`;
+                     }
+                     label = txt;
+                  }
+                  
+                  const tip = `[${target.status}] ${target.custName} (${target.pax}名)`;
+                  cellHtml += `<div class="${barClass}" title="${tip}" onclick="showCalendarDetail(event, '${target.id}')">${label}</div>`;
+                } else {
+                  cellHtml += `<div class="res-spacer"></div>`;
+                }
+              }
+              cellHtml += `</div>`;
+              bodyHtml += `<td class="${bgClass} ${widthClass}">${cellHtml}</td>`;
+            }
+            bodyHtml += '</tr>';
+          });
+
+          document.getElementById('tableBody').innerHTML = bodyHtml;
+          document.getElementById('matrixTable').style.display = 'table';
+
+        } catch(e) {
+          showError(e);
+        }
+      }
+
+      function showError(e) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error-msg').textContent = e.message;
+      }
+    </script>
+  </body>
+</html>

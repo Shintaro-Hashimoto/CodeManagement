@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <title>レッスン予約ポータル</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <style>
+    body { background: #f8f9fa; font-family: "Helvetica Neue", Arial, sans-serif; }
+    
+    .container-fluid-custom { 
+      width: 95%; 
+      max-width: 1800px; 
+      margin: 30px auto 50px auto; 
+    }
+
+    #calendar { 
+      background: white; 
+      padding: 20px; 
+      border-radius: 8px; 
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+    }
+
+    .hidden { display: none !important; }
+    .swal2-popup { font-size: 0.9rem !important; }
+    
+    /* 予約不可日: グレー */
+    .fc-day-disabled {
+      background-color: #e9ecef !important;
+      color: #adb5bd;
+      cursor: not-allowed !important;
+    }
+    /* 予約可能日: 薄い青 */
+    .fc-day-allowed {
+      background-color: #f0f8ff !important;
+      cursor: pointer !important;
+    }
+
+    /* 「今日」の強調スタイル */
+    .fc-day-today {
+      background-color: #fff9c4 !important;
+      border: 2px solid #ff9800 !important;
+      position: relative;
+      z-index: 5;
+    }
+    /* 今日の日付数字を少し目立たせる */
+    .fc-day-today .fc-daygrid-day-number {
+      font-weight: bold;
+      color: #d35400;
+    }
+
+    /* ★修正: 日付リンク感の排除 */
+    .fc-col-header-cell-cushion,
+    .fc-daygrid-day-number {
+      text-decoration: none !important; /* 下線なし */
+      color: #495057 !important;       /* 濃いグレー */
+      cursor: default !important;      /* 指マークにしない */
+    }
+    .fc-col-header-cell-cushion:hover,
+    .fc-daygrid-day-number:hover {
+      text-decoration: none !important;
+      color: #495057 !important;
+    }
+
+    /* ★修正: 土日の幅を狭くする設定 */
+    /* FullCalendarのテーブル列幅を強制的に上書き */
+    .fc-scrollgrid-sync-table colgroup col:first-child, /* 日曜 */
+    .fc-scrollgrid-sync-table colgroup col:last-child   /* 土曜 */
+    {
+      width: 6% !important; /* 狭く */
+    }
+    /* 平日を広く取る */
+    .fc-scrollgrid-sync-table colgroup col:not(:first-child):not(:last-child) {
+      width: 17.6% !important; /* 残りを等分 */
+    }
+
+    /* イベントスタイル */
+    .fc-event { 
+      cursor: pointer; 
+      border: none !important; 
+      background-color: transparent !important; 
+      box-shadow: none !important;
+    }
+    
+    .custom-event-box {
+      background-color: #3788d8; 
+      color: white;
+      border-radius: 4px;
+      padding: 4px 6px;
+      margin-bottom: 2px;
+      overflow: hidden;
+      font-size: 0.85rem;
+      line-height: 1.3;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .custom-event-box:hover {
+      background-color: #2c6cb0;
+    }
+
+    .event-row-time {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      border-bottom: 1px solid rgba(255,255,255,0.3);
+      padding-bottom: 2px;
+      margin-bottom: 2px;
+    }
+    .event-time-name { font-weight: bold; }
+    .event-time-range { font-size: 0.75em; opacity: 0.9; }
+    
+    .event-row-facility {
+      font-weight: bold;
+      white-space: normal; 
+      line-height: 1.2;
+      margin-bottom: 2px;
+    }
+    .event-row-class {
+      font-size: 0.8em;
+      opacity: 0.95;
+      white-space: normal;
+    }
+
+    #class-checkboxes {
+      max-height: 150px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+      padding: 0.5rem;
+    }
+    .form-check { margin-bottom: 0.3rem; }
+
+    .reservation-item {
+      border-left: 4px solid #0d6efd;
+      background-color: #f8f9fa;
+      transition: all 0.2s;
+    }
+    .reservation-item:hover {
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    @media (max-width: 576px) {
+      .container-fluid-custom { width: 100%; padding: 0 10px; }
+      .fc-toolbar-title { font-size: 1.1rem !important; }
+      .fc-header-toolbar { flex-direction: column; gap: 10px; }
+      .custom-event-box { font-size: 0.75rem; }
+      
+      /* スマホ時は幅調整を解除（見づらくなるため） */
+      .fc-scrollgrid-sync-table colgroup col { width: auto !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container-fluid-custom">
+  
+  <div id="login-screen" class="card p-4 mx-auto shadow-sm" style="max-width: 400px; margin-top: 10vh;">
+    <h3 class="text-center mb-4 text-primary fw-bold">法人ポータル</h3>
+    <div class="mb-3">
+      <label class="form-label fw-bold">法人ID</label>
+      <input type="text" id="corpId" class="form-control" placeholder="IDを入力">
+    </div>
+    <div class="mb-4">
+      <label class="form-label fw-bold">パスワード</label>
+      <input type="password" id="password" class="form-control" placeholder="PASSを入力">
+    </div>
+    <button onclick="doLogin()" class="btn btn-primary w-100 py-2 fw-bold">ログイン</button>
+    <div id="login-error" class="text-danger mt-3 text-center small fw-bold"></div>
+  </div>
+
+  <div id="main-screen" class="hidden">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h4 id="corp-name-display" class="fw-bold text-dark m-0"></h4>
+        <small class="text-secondary">
+          <span class="d-inline-block p-1" style="background:#f0f8ff; border:1px solid #ddd; font-size:10px;">薄い青</span> の日が予約可能です
+          <span class="ms-2 d-inline-block p-1" style="background:#fff9c4; border:2px solid #ff9800; font-size:10px; font-weight:bold;">黄色枠</span> が今日です
+        </small>
+      </div>
+      <div>
+         <button onclick="logout()" class="btn btn-outline-secondary btn-sm ms-2">ログアウト</button>
+      </div>
+    </div>
+    
+    <div id="calendar"></div>
+  </div>
+
+</div>
+
+<div class="modal fade" id="bookingModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">新規予約登録</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-4 fs-5 text-center border-bottom pb-2">
+          日付: <strong id="modal-date-display-text" class="text-primary"></strong>
+          <span id="modal-date-display" class="d-none"></span>
+        </p>
+        
+        <div class="mb-3">
+          <label class="form-label fw-bold">施設 <span class="badge bg-danger">必須</span></label>
+          <select id="modal-facility" class="form-select"></select>
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label fw-bold">時間 <span class="badge bg-danger">必須</span></label>
+          <select id="modal-time" class="form-select"></select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">参加クラス (複数選択可)</label>
+          <div id="class-checkboxes"></div>
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+        <button type="button" class="btn btn-primary fw-bold px-4" onclick="submitBooking()">予約する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="detailModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-dark bg-opacity-25">
+        <h5 class="modal-title fw-bold"><i class="bi bi-info-circle"></i> 予約詳細・変更</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="mb-3 border-bottom pb-2">
+          <h5 class="fw-bold text-primary mb-1">
+            <span id="detail-date"></span> 
+            <span id="detail-time"></span>
+            <span id="detail-time-range" class="fs-6 text-dark ms-2"></span>
+          </h5>
+          <small class="text-muted">以下の施設が予約されています</small>
+        </div>
+
+        <div id="reservation-list-container"></div>
+
+        <div id="change-facility-area" class="mt-3 p-3 bg-light border rounded d-none">
+          <label class="form-label fw-bold small text-primary">新しい施設を選択してください:</label>
+          <select id="detail-change-facility" class="form-select form-select-sm mb-2"></select>
+          <input type="hidden" id="target-reservation-id"> 
+          <div class="text-end">
+             <button class="btn btn-secondary btn-sm me-2" onclick="cancelChangeMode()">キャンセル</button>
+             <button class="btn btn-primary btn-sm" onclick="submitChangeFacility()">変更を確定する</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  let calendar;
+  let currentUser = null; 
+  let availableDatesList = []; 
+  const dayMap = ["日", "月", "火", "水", "木", "金", "土"];
+
+  const CLASS_OPTIONS = {
+    "保育園": ["0歳児クラス", "1歳児クラス", "2歳児クラス", "3歳児クラス", "4歳児クラス", "5歳児クラス"],
+    "学童": ["低学年", "高学年"]
+  };
+
+  function doLogin() {
+    const id = document.getElementById('corpId').value;
+    const pass = document.getElementById('password').value;
+    
+    if (!id || !pass) {
+      document.getElementById('login-error').innerText = "IDとパスワードを入力してください";
+      return;
+    }
+
+    document.getElementById('login-error').innerText = "ログイン中...";
+    
+    google.script.run.withSuccessHandler(res => {
+      if (res.success) {
+        currentUser = { id: id, ...res };
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('main-screen').classList.remove('hidden');
+        document.getElementById('corp-name-display').innerText = res.corpName + " 様";
+        
+        document.getElementById('modal-facility').addEventListener('change', function() {
+           const selectedFac = currentUser.facilities.find(f => f.id === this.value);
+           updateClassOptions(selectedFac ? selectedFac.type : "");
+        });
+
+        const myFacilityIds = currentUser.facilities.map(f => f.id);
+        loadLessonAvailability(myFacilityIds);
+
+      } else {
+        document.getElementById('login-error').innerText = res.message;
+      }
+    }).login(id, pass);
+  }
+
+  function loadLessonAvailability(facilityIds) {
+    google.script.run.withSuccessHandler(dates => {
+      availableDatesList = dates; 
+      initCalendar();
+      loadReservations();
+    }).getLessonAvailability(facilityIds);
+  }
+
+  function initCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      locale: 'ja',
+      height: 'auto',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,listMonth'
+      },
+      buttonText: { today: '今日', month: '月', list: 'リスト' },
+      selectable: true,
+      
+      eventContent: function(arg) {
+        const props = arg.event.extendedProps;
+        const timeName = props.timeName || '';
+        
+        const details = props.details || [];
+        // 施設名を改行表示
+        const facNames = [...new Set(details.map(d => d.facilityName))].join('<br>');
+        const classNames = [...new Set(details.map(d => d.className))].join(', ');
+
+        let timeRange = '';
+        if (currentUser && currentUser.timetables) {
+          const tInfo = currentUser.timetables.find(t => t.name === timeName);
+          if (tInfo) {
+            timeRange = `${tInfo.start}-${tInfo.end}`;
+          }
+        }
+
+        return {
+          html: `
+            <div class="custom-event-box">
+              <div class="event-row-time">
+                <span class="event-time-name">${timeName}</span>
+                <span class="event-time-range">${timeRange}</span>
+              </div>
+              <div class="event-row-facility">${facNames}</div>
+              <div class="event-row-class">${classNames}</div>
+            </div>
+          `
+        };
+      },
+
+      dayCellDidMount: function(arg) {
+        const year = arg.date.getFullYear();
+        const month = String(arg.date.getMonth() + 1).padStart(2, '0');
+        const day = String(arg.date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        if (availableDatesList.includes(dateStr)) {
+          arg.el.classList.add('fc-day-allowed');
+        } else {
+          arg.el.classList.add('fc-day-disabled');
+        }
+      },
+
+      dateClick: function(info) {
+        const dateStr = info.dateStr; 
+        if (!availableDatesList.includes(dateStr)) {
+           return; 
+        }
+        openBookingModal(info.date);
+      },
+
+      eventClick: function(info) {
+        openDetailModal(info.event);
+      },
+      
+      displayEventTime: false 
+    });
+    calendar.render();
+  }
+
+  function loadReservations() {
+    google.script.run.withSuccessHandler(events => {
+      calendar.removeAllEvents();
+      calendar.addEventSource(events);
+    }).getMyReservations(currentUser.id);
+  }
+
+  // === 新規予約モーダル ===
+  function openBookingModal(date) {
+    const dayOfWeek = dayMap[date.getDay()];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
+    document.getElementById('modal-date-display-text').innerText = dateStr + ` (${dayOfWeek})`;
+    document.getElementById('modal-date-display').dataset.value = dateStr;
+
+    const fSelect = document.getElementById('modal-facility');
+    fSelect.innerHTML = "";
+    currentUser.facilities.forEach(f => {
+      const opt = document.createElement("option");
+      opt.value = f.id;
+      opt.innerText = f.name;
+      fSelect.appendChild(opt);
+    });
+    
+    if(currentUser.facilities.length > 0) {
+      updateClassOptions(currentUser.facilities[0].type);
+    }
+
+    const tSelect = document.getElementById('modal-time');
+    tSelect.innerHTML = "";
+    
+    const allowedTimes = currentUser.constraints.allowedTimes || []; 
+    let hasTime = false;
+
+    currentUser.timetables.forEach(t => {
+       if (allowedTimes.length === 0 || allowedTimes.includes(t.name)) {
+         const opt = document.createElement("option");
+         opt.value = t.name;
+         opt.innerText = `${t.name} (${t.start} - ${t.end})`;
+         tSelect.appendChild(opt);
+         hasTime = true;
+       }
+    });
+
+    if (!hasTime) {
+      Swal.fire('注意', '予約可能な時間枠がありません', 'warning');
+    }
+
+    new bootstrap.Modal(document.getElementById('bookingModal')).show();
+  }
+
+  function updateClassOptions(facType) {
+    const container = document.getElementById('class-checkboxes');
+    container.innerHTML = "";
+
+    let options = [];
+    if (facType && CLASS_OPTIONS[facType]) {
+      options = CLASS_OPTIONS[facType];
+    }
+    
+    if (options.length === 0) {
+      container.innerHTML = "<small class='text-muted'>クラス選択はありません</small>";
+      return;
+    }
+
+    options.forEach((opt, index) => {
+      const div = document.createElement("div");
+      div.className = "form-check";
+      const input = document.createElement("input");
+      input.className = "form-check-input";
+      input.type = "checkbox";
+      input.value = opt;
+      input.id = "class-check-" + index;
+      
+      const label = document.createElement("label");
+      label.className = "form-check-label";
+      label.htmlFor = "class-check-" + index;
+      label.innerText = opt;
+      
+      div.appendChild(input);
+      div.appendChild(label);
+      container.appendChild(div);
+    });
+  }
+
+  function submitBooking() {
+    const checkedBoxes = document.querySelectorAll('#class-checkboxes input[type="checkbox"]:checked');
+    const selectedClasses = Array.from(checkedBoxes).map(cb => cb.value);
+    
+    const data = {
+      facilityId: document.getElementById('modal-facility').value,
+      dateStr: document.getElementById('modal-date-display').dataset.value,
+      timeName: document.getElementById('modal-time').value,
+      className: selectedClasses.join(',')
+    };
+
+    Swal.fire({
+      title: '確認',
+      text: "この内容で予約しますか？",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: '予約する',
+      cancelButtonText: 'キャンセル',
+      confirmButtonColor: '#0d6efd'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        bootstrap.Modal.getInstance(document.getElementById('bookingModal')).hide();
+        Swal.fire({title: '処理中...', didOpen: () => { Swal.showLoading() }});
+
+        google.script.run.withSuccessHandler(res => {
+          if(res.success) {
+            Swal.fire('完了', '予約しました！', 'success');
+            loadReservations();
+          } else {
+            Swal.fire('エラー', res.message, 'error');
+          }
+        }).registerReservation(data);
+      }
+    });
+  }
+
+  // === 詳細モーダル ===
+  function openDetailModal(event) {
+    const props = event.extendedProps;
+    const details = props.details || [];
+    
+    const d = event.start;
+    const dateStr = d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' (' + dayMap[d.getDay()] + ')';
+
+    document.getElementById('detail-date').innerText = dateStr;
+    document.getElementById('detail-time').innerText = props.timeName || "-";
+    
+    let timeRangeStr = "";
+    if (currentUser && currentUser.timetables) {
+       const tInfo = currentUser.timetables.find(t => t.name === props.timeName);
+       if(tInfo) timeRangeStr = `${tInfo.start} - ${tInfo.end}`;
+    }
+    document.getElementById('detail-time-range').innerText = timeRangeStr;
+    
+    const listContainer = document.getElementById('reservation-list-container');
+    listContainer.innerHTML = "";
+    
+    cancelChangeMode();
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const lessonDate = new Date(d);
+    lessonDate.setHours(0,0,0,0);
+    const diffDays = (lessonDate - today) / (1000 * 3600 * 24);
+    const isEditable = (diffDays >= 2);
+
+    details.forEach(item => {
+       const div = document.createElement("div");
+       div.className = "card mb-2 reservation-item";
+       
+       let buttonsHtml = "";
+       if (isEditable) {
+         buttonsHtml = `
+           <button class="btn btn-sm btn-outline-primary me-1" onclick="setupChange('${item.reservationId}')">変更</button>
+           <button class="btn btn-sm btn-outline-danger" onclick="cancelOne('${item.reservationId}')">×</button>
+         `;
+       } else {
+         buttonsHtml = `<small class="text-muted">変更期限切れ</small>`;
+       }
+
+       div.innerHTML = `
+         <div class="card-body p-2 d-flex justify-content-between align-items-center">
+           <div>
+             <div class="fw-bold">${item.facilityName}</div>
+             <small class="text-muted">${item.className}</small>
+           </div>
+           <div style="min-width:100px; text-align:right;">
+             ${buttonsHtml}
+           </div>
+         </div>
+       `;
+       listContainer.appendChild(div);
+    });
+
+    new bootstrap.Modal(document.getElementById('detailModal')).show();
+  }
+
+  function cancelOne(reservationId) {
+    Swal.fire({
+      title: '確認',
+      text: "この施設の予約をキャンセルしますか？",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'はい',
+      cancelButtonText: 'いいえ',
+      confirmButtonColor: '#dc3545'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({title: '処理中...', didOpen: () => { Swal.showLoading() }});
+        google.script.run.withSuccessHandler(res => {
+          if (res.success) {
+            bootstrap.Modal.getInstance(document.getElementById('detailModal')).hide();
+            Swal.fire('完了', 'キャンセルしました。', 'success');
+            loadReservations();
+          } else {
+            Swal.fire('エラー', res.message, 'error');
+          }
+        }).cancelReservation(reservationId, currentUser.id);
+      }
+    });
+  }
+
+  function setupChange(reservationId) {
+    document.getElementById('reservation-list-container').classList.add('d-none');
+    document.getElementById('change-facility-area').classList.remove('d-none');
+    document.getElementById('target-reservation-id').value = reservationId;
+
+    const select = document.getElementById('detail-change-facility');
+    select.innerHTML = "";
+    currentUser.facilities.forEach(f => {
+      const opt = document.createElement("option");
+      opt.value = f.id;
+      opt.innerText = f.name;
+      select.appendChild(opt);
+    });
+  }
+
+  function cancelChangeMode() {
+    document.getElementById('change-facility-area').classList.add('d-none');
+    document.getElementById('reservation-list-container').classList.remove('d-none');
+  }
+
+  function submitChangeFacility() {
+    const newFacilityId = document.getElementById('detail-change-facility').value;
+    const reservationId = document.getElementById('target-reservation-id').value;
+    
+    if (!newFacilityId || !reservationId) return;
+
+    Swal.fire({
+      title: '確認',
+      text: "施設を変更しますか？",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: '変更する',
+      cancelButtonText: 'キャンセル'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({title: '処理中...', didOpen: () => { Swal.showLoading() }});
+        google.script.run.withSuccessHandler(res => {
+          if (res.success) {
+            bootstrap.Modal.getInstance(document.getElementById('detailModal')).hide();
+            Swal.fire('完了', '施設を変更しました。', 'success');
+            loadReservations();
+          } else {
+            Swal.fire('エラー', res.message, 'error');
+          }
+        }).changeFacility(reservationId, newFacilityId, currentUser.id);
+      }
+    });
+  }
+
+  // ★修正: ログアウト処理 (SPA方式: 画面リロードせず表示切り替え)
+  function logout() {
+    // ログイン情報をクリア
+    currentUser = null;
+    availableDatesList = [];
+    document.getElementById('corpId').value = "";
+    document.getElementById('password').value = "";
+    
+    // カレンダーイベントのクリア
+    if (calendar) {
+      calendar.removeAllEvents();
+    }
+
+    // 画面切り替え
+    document.getElementById('main-screen').classList.add('hidden');
+    document.getElementById('login-screen').classList.remove('hidden');
+  }
+</script>
+</body>
+</html>
