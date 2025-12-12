@@ -1,6 +1,6 @@
 /**
  * ===================================================================
- * メール送信機能 (Daily & Weekly & Monthly) - Monthlyクラス非表示版
+ * メール送信機能 (Daily & Weekly & Monthly) - WordPress連携版
  * ===================================================================
  */
 
@@ -8,15 +8,14 @@
 const MAIL_SENDER_NAME = "KIDS PLUS english";
 const REPLY_TO_ADDRESS = "support@kidsplus.me";
 
-// ★★★ 画像・URL設定 ★★★
+// ★★★ 画像設定 ★★★
 const LOGO_URL = "https://www.kidsplus.school/wp-content/uploads/images/logo.png";
 const ICON_URL = "https://www.kidsplus.school/wp-content/uploads/images/icon1.png";
 const APP_URL  = "https://www.appsheet.com/start/5bc3fd25-0251-4979-a02b-fc102902e840";
 
-// ★★★ キャンセル用WebアプリURL ★★★
-// ※URLが変わった場合は更新してください
-const CANCEL_WEB_URL = "https://script.google.com/macros/s/AKfycbzHBEp92jESEwv9Eg1WOxb75AHvXgdcrXPKZh_y6m2uCQOSI9NSd6WMeOsZR49ESLjS/exec";
-
+// ★★★ 【重要】キャンセル画面のURLを自社サイトに変更 ★★★
+// WordPressで作った固定ページのURLを入力してください
+const CANCEL_WEB_URL = "https://kidsplus.school/app/cancel/";
 
 /**
  * 1. 前日リマインドメール送信 (毎日 13:00 実行用)
@@ -88,21 +87,27 @@ function sendDailyReminders() {
       }
 
       const meetingCode = meetUrl.replace("https://meet.google.com/", "");
+      
+      // ★修正: パラメータのつけ方はそのままでOK（PHP側で ?id=... を受け取れるため）
       const cancelLink = CANCEL_WEB_URL + "?id=" + r.予約ID;
 
       lessonsHtml += `
         <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 20px;">
+          
           <p style="margin: 0 0 10px 0; color: #0056b3; font-size: 20px;">
             <strong>⏰ ${startT} - ${endT}</strong> 
             <span style="font-size: 16px; color: #666;">(${r.時間名})</span>
           </p>
+          
           <p style="margin: 5px 0; font-size: 18px;">
             <strong>🔑 会議コード:</strong> 
             <span style="font-family: monospace; letter-spacing: 1px; color: #333; border-bottom: 1px dotted #999;">${meetingCode}</span>
           </p>
+
           <p style="margin: 5px 0; font-size: 18px;">
             <strong>👩‍🏫 講師:</strong> ${koushi ? koushi.講師名 : '未定'}
           </p>
+          
           <div style="margin-top: 20px; text-align: center;">
              <a href="${meetUrl}" style="background-color: #E63566; color: white; padding: 12px 28px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                🎥 Meetに参加する
@@ -111,6 +116,7 @@ function sendDailyReminders() {
           <div style="text-align: center; margin-top: 8px;">
              <span style="font-size: 11px; color: #999;">(${meetUrl})</span>
           </div>
+
           <div style="text-align: right; margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
              <a href="${cancelLink}" style="font-size: 13px; color: #666; text-decoration: underline;">このレッスンをキャンセルする</a>
           </div>
@@ -131,23 +137,33 @@ function sendDailyReminders() {
 
     const htmlBody = `
       <div style="font-family: sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto;">
+        
         <div style="text-align: center; margin-bottom: 20px;">
           <img src="${LOGO_URL}" width="100" style="width: 100px; height: auto;" alt="KIDS PLUS english">
         </div>
+        
         <h2 style="color: #0056b3; border-bottom: 2px solid #0056b3; margin-bottom: 20px; padding-bottom: 10px; font-size: 20px; text-align: center;">
           明日のレッスンのお知らせ
         </h2>
+
         <p style="font-size: 16px;">
           <strong>${shisetsu.施設名}</strong><br>
           ${shisetsu.担当者名 ? shisetsu.担当者名 + ' 様' : 'ご担当者様'}
         </p>
+        
         <p style="font-size: 16px;">いつもご利用ありがとうございます。<br>
         明日のKIDS PLUS englishレッスンのご案内です（計 ${reservations.length}件）。</p>
-        <div style="margin-top: 25px;">${lessonsHtml}</div>
+        
+        <div style="margin-top: 25px;">
+          ${lessonsHtml}
+        </div>
+        
         <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0 20px 0;">
+        
         <div style="text-align: center; margin-bottom: 20px;">
           <img src="${ICON_URL}" width="250" style="width: 250px; height: auto; vertical-align: middle;" alt="icon">
         </div>
+
         <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; font-size: 12px; color: #666; text-align: center; margin-bottom: 20px;">
           <p style="margin: 0 0 10px 0;">※本メールは自動送信です。確認・変更は、アプリまたは上記リンクから申請してください。</p>
           <p style="margin: 0; border-top: 1px solid #ddd; padding-top: 10px;">
@@ -157,11 +173,13 @@ function sendDailyReminders() {
             050-3185-1570
           </p>
         </div>
+
         <div style="text-align: center; margin-bottom: 30px;">
            <a href="${APP_URL}" style="color: #0056b3; text-decoration: none; border: 1px solid #0056b3; padding: 10px 24px; border-radius: 4px; font-size: 15px; display: inline-block;">
              📱 アプリを開いて確認
            </a>
         </div>
+
       </div>
     `;
 
@@ -190,7 +208,10 @@ ${APP_URL}
       htmlBody: htmlBody,
       replyTo: REPLY_TO_ADDRESS
     };
-    if (houjin && houjin.代表連絡先メールアドレス) options.cc = houjin.代表連絡先メールアドレス;
+    
+    if (houjin && houjin.代表連絡先メールアドレス) {
+      options.cc = houjin.代表連絡先メールアドレス;
+    }
 
     MailApp.sendEmail(shisetsu.担当者メールアドレス, subject, textBody, options);
     Logger.log(`Sent Daily Reminder to: ${shisetsu.施設名} (${reservations.length} lessons)`);
@@ -201,12 +222,138 @@ ${APP_URL}
  * 2. 週次スケジュール送信 (毎週月曜 8:00 実行用)
  */
 function sendWeeklySchedule() {
-  // ... (今回は変更なし) ...
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const yoyakuSheet = ss.getSheetByName("参加予約");
+  const shisetsuSheet = ss.getSheetByName("施設マスタ");
+  const houjinSheet = ss.getSheetByName("法人マスタ");
+  const koushiSheet = ss.getSheetByName("講師マスタ");
+  const timetableSheet = ss.getSheetByName("時間割マスタ");
+
+  const yoyakuData = sheetToObjects(yoyakuSheet);
+  const shisetsuData = sheetToObjects(shisetsuSheet);
+  const houjinData = sheetToObjects(houjinSheet);
+  const koushiData = sheetToObjects(koushiSheet);
+  const timetableData = sheetToObjects(timetableSheet);
+
+  const today = new Date();
+  const endDate = new Date(today);
+  endDate.setDate(today.getDate() + 5);
+
+  shisetsuData.forEach(shisetsu => {
+    const houjin = houjinData.find(h => h.法人ID === shisetsu.法人ID);
+    const recipient = houjin ? houjin.代表連絡先メールアドレス : null;
+    if (!recipient) return;
+
+    const weeksReservations = yoyakuData.filter(y => {
+      const d = new Date(y.レッスン日);
+      return y.施設ID === shisetsu.施設ID && 
+             y.ステータス === "予約済" &&
+             d >= today && d < endDate;
+    });
+
+    if (weeksReservations.length > 0) {
+      
+      weeksReservations.sort((a, b) => new Date(a.レッスン日) - new Date(b.レッスン日));
+
+      let tableRows = "";
+      let textRows = "";
+
+      weeksReservations.forEach(r => {
+        const dStr = Utilities.formatDate(new Date(r.レッスン日), Session.getScriptTimeZone(), "MM/dd");
+        const koushi = koushiData.find(k => k.講師ID === r.講師ID);
+        const time = timetableData.find(t => t.時間名 === r.時間名);
+        const timeStr = time ? `${Utilities.formatDate(new Date(time.開始時間), Session.getScriptTimeZone(), "HH:mm")}-${Utilities.formatDate(new Date(time.終了時間), Session.getScriptTimeZone(), "HH:mm")}` : r.時間名;
+        
+        tableRows += `
+          <tr>
+            <td style="border:1px solid #ddd; padding:8px;">${dStr}</td>
+            <td style="border:1px solid #ddd; padding:8px;">${timeStr}</td>
+            <td style="border:1px solid #ddd; padding:8px;">${r.参加クラス}</td>
+            <td style="border:1px solid #ddd; padding:8px;">${koushi ? koushi.講師名 : '-'}</td>
+          </tr>`;
+        
+        textRows += `${dStr} ${timeStr} ${r.参加クラス} (${koushi ? koushi.講師名 : '-'})\n`;
+      });
+
+      const subject = `【KIDS PLUS】今週のレッスンスケジュールのお知らせ (${shisetsu.施設名})`;
+
+      const htmlBody = `
+        <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="${LOGO_URL}" width="100" style="width: 100px; height: auto;" alt="KIDS PLUS english">
+          </div>
+          
+          <h2 style="color: #0056b3; text-align: center; padding-bottom: 10px; border-bottom: 2px solid #0056b3;">
+             今週のレッスンスケジュール
+          </h2>
+
+          <p><strong>${shisetsu.施設名}</strong> のスケジュールをお送りします。</p>
+          
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr style="background: #f8f9fa;">
+              <th style="border:1px solid #ddd; padding:8px; text-align:left;">日付</th>
+              <th style="border:1px solid #ddd; padding:8px; text-align:left;">時間</th>
+              <th style="border:1px solid #ddd; padding:8px; text-align:left;">クラス</th>
+              <th style="border:1px solid #ddd; padding:8px; text-align:left;">講師</th>
+            </tr>
+            ${tableRows}
+          </table>
+          
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0 20px 0;">
+
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="${ICON_URL}" width="250" style="width: 250px; height: auto; vertical-align: middle;" alt="icon">
+          </div>
+
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; font-size: 12px; color: #666; text-align: center; margin-bottom: 20px;">
+            <p style="margin: 0 0 10px 0;">※本メールは自動送信です。確認・変更は、アプリまたは上記リンクから申請してください。</p>
+            <p style="margin: 0; border-top: 1px solid #ddd; padding-top: 10px;">
+              <strong>【カスタマーサポート】</strong><br>
+              ご不明点は、カスタマーサポートへご連絡ください。<br>
+              <a href="mailto:support@kidsplus.me" style="color: #0056b3; text-decoration: none;">support@kidsplus.me</a><br>
+              050-3185-1570
+            </p>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 30px;">
+             <a href="${APP_URL}" style="color: #0056b3; text-decoration: none; border: 1px solid #0056b3; padding: 10px 24px; border-radius: 4px; font-size: 15px; display: inline-block;">
+               📱 アプリを開いて確認
+             </a>
+          </div>
+        </div>
+      `;
+
+      const textBody = `
+${shisetsu.施設名} 様
+今週のレッスン予定をお送りします。
+
+${textRows}
+
+※本メールは自動送信です。確認・変更は、アプリまたは上記リンクから申請してください。
+
+【カスタマーサポート】
+ご不明点は、カスタマーサポートへご連絡ください。
+support@kidsplus.me
+050-3185-1570
+
+▼アプリを開いて確認
+${APP_URL}
+      `.trim();
+
+      const options = { 
+        name: MAIL_SENDER_NAME, 
+        htmlBody: htmlBody,
+        replyTo: REPLY_TO_ADDRESS
+      };
+      
+      MailApp.sendEmail(recipient, subject, textBody, options);
+      Logger.log(`Sent Weekly Schedule for ${shisetsu.施設名} to Corporate: ${recipient}`);
+    }
+  });
 }
 
 /**
  * 3. 月次スケジュール確認メール送信 (毎月20日頃実行)
- * 修正: テーブルから「クラス」列を削除、期日を28日に設定
  */
 function sendMonthlyConfirmation() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -214,11 +361,13 @@ function sendMonthlyConfirmation() {
   const shisetsuSheet = ss.getSheetByName("施設マスタ");
   const timetableSheet = ss.getSheetByName("時間割マスタ");
   const koushiSheet = ss.getSheetByName("講師マスタ");
+  const houjinSheet = ss.getSheetByName("法人マスタ");
 
   const yoyakuData = sheetToObjects(yoyakuSheet);
   const shisetsuData = sheetToObjects(shisetsuSheet);
   const timetableData = sheetToObjects(timetableSheet);
   const koushiData = sheetToObjects(koushiSheet);
+  const houjinData = sheetToObjects(houjinSheet);
   
   const nextMonth = new Date();
   nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -227,12 +376,14 @@ function sendMonthlyConfirmation() {
   const nextMonthStr = Utilities.formatDate(nextMonth, Session.getScriptTimeZone(), "yyyy-MM");
   const nextMonthDisplay = Utilities.formatDate(nextMonth, Session.getScriptTimeZone(), "yyyy年M月");
 
-  // ★期日設定: 今月の28日
   const deadlineDate = new Date();
   deadlineDate.setDate(28); 
   const deadlineStr = Utilities.formatDate(deadlineDate, Session.getScriptTimeZone(), "M月28日");
 
+  // ★修正: WordPressページのURLに変更
   const baseUrl = CANCEL_WEB_URL; 
+  
+  const dayMap = ["日", "月", "火", "水", "木", "金", "土"];
 
   shisetsuData.forEach(shisetsu => {
     if (!shisetsu.担当者メールアドレス) return;
@@ -244,17 +395,22 @@ function sendMonthlyConfirmation() {
     });
 
     if (targetReservations.length > 0) {
+      const houjin = houjinData.find(h => h.法人ID === shisetsu.法人ID);
+
       targetReservations.sort((a, b) => new Date(a.レッスン日) - new Date(b.レッスン日));
 
       let tableRows = "";
       
       targetReservations.forEach(r => {
-        const dStr = Utilities.formatDate(new Date(r.レッスン日), Session.getScriptTimeZone(), "MM/dd (E)");
+        const d = new Date(r.レッスン日);
+        const ymd = Utilities.formatDate(d, Session.getScriptTimeZone(), "MM/dd");
+        const dayIndex = d.getDay();
+        const dStr = `${ymd} (${dayMap[dayIndex]})`;
+
         const time = timetableData.find(t => t.時間名 === r.時間名);
         const timeStr = time ? `${Utilities.formatDate(new Date(time.開始時間), Session.getScriptTimeZone(), "HH:mm")}-${Utilities.formatDate(new Date(time.終了時間), Session.getScriptTimeZone(), "HH:mm")}` : r.時間名;
         const koushi = koushiData.find(k => k.講師ID === r.講師ID);
         
-        // ★修正: クラスの列を削除
         tableRows += `
           <tr>
             <td style="border-bottom:1px solid #eee; padding:8px;">${dStr}</td>
@@ -263,12 +419,20 @@ function sendMonthlyConfirmation() {
           </tr>`;
       });
 
+      // ★修正: パラメータのつけ方はそのままでOK（PHP側で ?mode=... を受け取れるため）
       const confirmUrl = `${baseUrl}?mode=monthly&fid=${shisetsu.施設ID}&ym=${nextMonthStr}`;
       const subject = `【重要】${nextMonthDisplay}分 レッスンスケジュールのご確認願い (${shisetsu.施設名})`;
 
       const htmlBody = `
         <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #0056b3;">翌月のスケジュール確認</h2>
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="${LOGO_URL}" width="100" style="width: 100px; height: auto;" alt="KIDS PLUS english">
+          </div>
+
+          <h2 style="color: #0056b3; border-bottom: 2px solid #0056b3; margin-bottom: 20px; padding-bottom: 10px; text-align: center;">
+            翌月のスケジュール確認
+          </h2>
+
           <p>${shisetsu.施設名} 様</p>
           <p>いつもご利用ありがとうございます。<br>
           来月（${nextMonthDisplay}）のレッスンスケジュール（計${targetReservations.length}件）をお送りします。</p>
@@ -296,21 +460,42 @@ function sendMonthlyConfirmation() {
               ✅ スケジュール調整画面へ
             </a>
           </div>
+          
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0 20px 0;">
 
-          <p style="font-size:12px; color:#666;">
-            ※期日を過ぎますと、自動的に予約確定となります。<br>
-            URL: ${confirmUrl}
-          </p>
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="${ICON_URL}" width="250" style="width: 250px; height: auto; vertical-align: middle;" alt="icon">
+          </div>
+
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; font-size: 12px; color: #666; text-align: center; margin-bottom: 20px;">
+            <p style="margin: 0 0 10px 0;">※期日を過ぎますと、自動的に予約確定となります。</p>
+            <p style="margin: 0; border-top: 1px solid #ddd; padding-top: 10px;">
+              <strong>【カスタマーサポート】</strong><br>
+              ご不明点は、カスタマーサポートへご連絡ください。<br>
+              <a href="mailto:support@kidsplus.me" style="color: #0056b3; text-decoration: none;">support@kidsplus.me</a><br>
+              050-3185-1570
+            </p>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 30px;">
+             <a href="${APP_URL}" style="color: #0056b3; text-decoration: none; border: 1px solid #0056b3; padding: 10px 24px; border-radius: 4px; font-size: 15px; display: inline-block;">
+               📱 アプリを開いて確認
+             </a>
+          </div>
         </div>
       `;
 
-      MailApp.sendEmail({
-        to: shisetsu.担当者メールアドレス,
-        subject: subject,
+      const options = {
         htmlBody: htmlBody,
         name: MAIL_SENDER_NAME,
         replyTo: REPLY_TO_ADDRESS
-      });
+      };
+      
+      if (houjin && houjin.代表連絡先メールアドレス) {
+        options.cc = houjin.代表連絡先メールアドレス;
+      }
+
+      MailApp.sendEmail(shisetsu.担当者メールアドレス, subject, null, options);
       
       Logger.log(`Sent Monthly Confirm to: ${shisetsu.施設名}`);
     }
