@@ -6,7 +6,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // ★★★ GASの新しいウェブアプリURL ★★★
-define('GAS_API_URL', 'https://script.google.com/macros/s/AKfycbxW9U2GYz7I540pGMIH9-nUZCGe56bO7NWOD7s6rj7ZHQPu5fFlIFP7xEvxOyZiM1CI/exec');
+define('GAS_API_URL', 'https://script.google.com/macros/s/AKfycbwpQcPhWKTrHg4X5UEXar5ssVRz2h0FT3hsxBhR4nxuAgkRHLkwrxXLXeIXSmp5_NG-/exec');
 
 // パラメータ取得
 $mode           = isset($_GET['mode']) ? $_GET['mode'] : 'single'; 

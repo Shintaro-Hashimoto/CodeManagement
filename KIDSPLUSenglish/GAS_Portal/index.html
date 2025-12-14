@@ -27,37 +27,45 @@
     .hidden { display: none !important; }
     .swal2-popup { font-size: 0.9rem !important; }
     
-    /* 予約不可日: グレー */
-    .fc-day-disabled {
+    /* 予約不可セル */
+    .cell-unavailable {
       background-color: #e9ecef !important;
       color: #adb5bd;
       cursor: not-allowed !important;
+      transition: background-color 0.2s;
     }
-    /* 予約可能日: 薄い青 */
-    .fc-day-allowed {
+    /* 予約可能セル */
+    .cell-available {
       background-color: #f0f8ff !important;
       cursor: pointer !important;
     }
+    /* 休講日セル */
+    .cell-holiday {
+      background-color: #ffebee !important;
+      color: #c62828 !important;
+      cursor: not-allowed !important;
+    }
 
-    /* 「今日」の強調スタイル */
     .fc-day-today {
-      background-color: #fff9c4 !important;
       border: 2px solid #ff9800 !important;
       position: relative;
       z-index: 5;
     }
-    /* 今日の日付数字を少し目立たせる */
     .fc-day-today .fc-daygrid-day-number {
       font-weight: bold;
       color: #d35400;
     }
 
-    /* ★修正: 日付リンク感の排除 */
+    .fc-scrollgrid-sync-table colgroup col:first-child, 
+    .fc-scrollgrid-sync-table colgroup col:last-child {
+      width: 6% !important;
+    }
+
     .fc-col-header-cell-cushion,
     .fc-daygrid-day-number {
-      text-decoration: none !important; /* 下線なし */
-      color: #495057 !important;       /* 濃いグレー */
-      cursor: default !important;      /* 指マークにしない */
+      text-decoration: none !important;
+      color: #495057 !important;
+      cursor: default !important;
     }
     .fc-col-header-cell-cushion:hover,
     .fc-daygrid-day-number:hover {
@@ -65,19 +73,6 @@
       color: #495057 !important;
     }
 
-    /* ★修正: 土日の幅を狭くする設定 */
-    /* FullCalendarのテーブル列幅を強制的に上書き */
-    .fc-scrollgrid-sync-table colgroup col:first-child, /* 日曜 */
-    .fc-scrollgrid-sync-table colgroup col:last-child   /* 土曜 */
-    {
-      width: 6% !important; /* 狭く */
-    }
-    /* 平日を広く取る */
-    .fc-scrollgrid-sync-table colgroup col:not(:first-child):not(:last-child) {
-      width: 17.6% !important; /* 残りを等分 */
-    }
-
-    /* イベントスタイル */
     .fc-event { 
       cursor: pointer; 
       border: none !important; 
@@ -97,7 +92,12 @@
       box-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
     .custom-event-box:hover {
-      background-color: #2c6cb0;
+      opacity: 0.9;
+    }
+    
+    /* 定期予約の色 (緑) */
+    .custom-event-box.regular {
+      background-color: #198754 !important; 
     }
 
     .event-row-time {
@@ -138,6 +138,10 @@
       background-color: #f8f9fa;
       transition: all 0.2s;
     }
+    /* 定期アイテムのボーダー色 */
+    .reservation-item.regular {
+      border-left-color: #198754;
+    }
     .reservation-item:hover {
       background-color: #fff;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -148,8 +152,6 @@
       .fc-toolbar-title { font-size: 1.1rem !important; }
       .fc-header-toolbar { flex-direction: column; gap: 10px; }
       .custom-event-box { font-size: 0.75rem; }
-      
-      /* スマホ時は幅調整を解除（見づらくなるため） */
       .fc-scrollgrid-sync-table colgroup col { width: auto !important; }
     }
   </style>
@@ -177,8 +179,11 @@
       <div>
         <h4 id="corp-name-display" class="fw-bold text-dark m-0"></h4>
         <small class="text-secondary">
-          <span class="d-inline-block p-1" style="background:#f0f8ff; border:1px solid #ddd; font-size:10px;">薄い青</span> の日が予約可能です
-          <span class="ms-2 d-inline-block p-1" style="background:#fff9c4; border:2px solid #ff9800; font-size:10px; font-weight:bold;">黄色枠</span> が今日です
+          <span class="d-inline-block p-1" style="background:#f0f8ff; border:1px solid #ddd; font-size:10px;">薄い青</span> 予約可能
+          <span class="ms-2 d-inline-block p-1" style="background:#ffebee; border:1px solid #ffcdd2; font-size:10px;">ピンク</span> 休講日
+          <span class="ms-2 d-inline-block p-1" style="background:#fff9c4; border:2px solid #ff9800; font-size:10px; font-weight:bold;">黄色枠</span> 今日
+          <span class="ms-2 d-inline-block p-1 bg-primary text-white" style="font-size:10px; border-radius:2px;">青色</span> 単発予約
+          <span class="ms-2 d-inline-block p-1 bg-success text-white" style="font-size:10px; border-radius:2px;">緑色</span> 定期予約
         </small>
       </div>
       <div>
@@ -269,6 +274,7 @@
   let calendar;
   let currentUser = null; 
   let availableDatesList = []; 
+  let holidayDatesList = []; 
   const dayMap = ["日", "月", "火", "水", "木", "金", "土"];
 
   const CLASS_OPTIONS = {
@@ -299,8 +305,11 @@
            updateClassOptions(selectedFac ? selectedFac.type : "");
         });
 
-        const myFacilityIds = currentUser.facilities.map(f => f.id);
-        loadLessonAvailability(myFacilityIds);
+        google.script.run.withSuccessHandler(holidays => {
+          holidayDatesList = holidays;
+          const myFacilityIds = currentUser.facilities.map(f => f.id);
+          loadLessonAvailability(myFacilityIds);
+        }).getHolidays();
 
       } else {
         document.getElementById('login-error').innerText = res.message;
@@ -330,12 +339,29 @@
       buttonText: { today: '今日', month: '月', list: 'リスト' },
       selectable: true,
       
+      dayCellClassNames: function(arg) {
+        const year = arg.date.getFullYear();
+        const month = String(arg.date.getMonth() + 1).padStart(2, '0');
+        const day = String(arg.date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        if (holidayDatesList.includes(dateStr)) {
+          return ['cell-holiday'];
+        }
+        else if (availableDatesList.includes(dateStr)) {
+          return ['cell-available'];
+        } 
+        else {
+          return ['cell-unavailable'];
+        }
+      },
+
       eventContent: function(arg) {
         const props = arg.event.extendedProps;
         const timeName = props.timeName || '';
+        const hasRecurring = props.hasRecurring || false; 
         
         const details = props.details || [];
-        // 施設名を改行表示
         const facNames = [...new Set(details.map(d => d.facilityName))].join('<br>');
         const classNames = [...new Set(details.map(d => d.className))].join(', ');
 
@@ -347,9 +373,11 @@
           }
         }
 
+        const boxClass = hasRecurring ? "custom-event-box regular" : "custom-event-box";
+
         return {
           html: `
-            <div class="custom-event-box">
+            <div class="${boxClass}">
               <div class="event-row-time">
                 <span class="event-time-name">${timeName}</span>
                 <span class="event-time-range">${timeRange}</span>
@@ -361,24 +389,10 @@
         };
       },
 
-      dayCellDidMount: function(arg) {
-        const year = arg.date.getFullYear();
-        const month = String(arg.date.getMonth() + 1).padStart(2, '0');
-        const day = String(arg.date.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-
-        if (availableDatesList.includes(dateStr)) {
-          arg.el.classList.add('fc-day-allowed');
-        } else {
-          arg.el.classList.add('fc-day-disabled');
-        }
-      },
-
       dateClick: function(info) {
         const dateStr = info.dateStr; 
-        if (!availableDatesList.includes(dateStr)) {
-           return; 
-        }
+        if (holidayDatesList.includes(dateStr)) return;
+        if (!availableDatesList.includes(dateStr)) return; 
         openBookingModal(info.date);
       },
 
@@ -547,14 +561,18 @@
 
     details.forEach(item => {
        const div = document.createElement("div");
-       div.className = "card mb-2 reservation-item";
+       const isRegular = item.isRegular; 
+       const rowClass = isRegular ? "card mb-2 reservation-item regular" : "card mb-2 reservation-item";
+       div.className = rowClass;
        
        let buttonsHtml = "";
        if (isEditable) {
-         buttonsHtml = `
-           <button class="btn btn-sm btn-outline-primary me-1" onclick="setupChange('${item.reservationId}')">変更</button>
-           <button class="btn btn-sm btn-outline-danger" onclick="cancelOne('${item.reservationId}')">×</button>
-         `;
+         buttonsHtml = `<button class="btn btn-sm btn-outline-primary me-1" onclick="setupChange('${item.reservationId}')">変更</button>`;
+         // ★修正: 定期予約でもキャンセルボタンを表示。isRegularフラグを渡す。
+         if (isRegular) {
+           buttonsHtml += `<span class="badge bg-success me-1">定期</span>`;
+         }
+         buttonsHtml += `<button class="btn btn-sm btn-outline-danger" onclick="cancelOne('${item.reservationId}', ${isRegular})">×</button>`;
        } else {
          buttonsHtml = `<small class="text-muted">変更期限切れ</small>`;
        }
@@ -576,14 +594,20 @@
     new bootstrap.Modal(document.getElementById('detailModal')).show();
   }
 
-  function cancelOne(reservationId) {
+  // ★修正: 定期かどうかでメッセージを変える
+  function cancelOne(reservationId, isRegular) {
+    let msg = "本当にキャンセルしますか？";
+    if (isRegular) {
+      msg = "この定期スケジュールの\n【この日だけ】をキャンセルしますか？\n(他の日程には影響しません)";
+    }
+
     Swal.fire({
       title: '確認',
-      text: "この施設の予約をキャンセルしますか？",
+      text: msg,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'はい',
-      cancelButtonText: 'いいえ',
+      confirmButtonText: 'はい、キャンセルします',
+      cancelButtonText: '戻る',
       confirmButtonColor: '#dc3545'
     }).then((result) => {
       if (result.isConfirmed) {
@@ -650,20 +674,17 @@
     });
   }
 
-  // ★修正: ログアウト処理 (SPA方式: 画面リロードせず表示切り替え)
   function logout() {
-    // ログイン情報をクリア
     currentUser = null;
     availableDatesList = [];
+    holidayDatesList = [];
     document.getElementById('corpId').value = "";
     document.getElementById('password').value = "";
     
-    // カレンダーイベントのクリア
     if (calendar) {
       calendar.removeAllEvents();
     }
 
-    // 画面切り替え
     document.getElementById('main-screen').classList.add('hidden');
     document.getElementById('login-screen').classList.remove('hidden');
   }

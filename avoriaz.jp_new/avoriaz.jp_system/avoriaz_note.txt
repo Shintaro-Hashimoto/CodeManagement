@@ -1,0 +1,102 @@
+# 開発コンテキストの引き継ぎ依頼 (avoriaz_note)
+現在開発中の「宿泊管理システム (AVORIAZ)」の続きをお願いします。
+以下の仕様と現状を理解した上で、指示を待ってください。
+
+## 1. システム概要
+* **目的:** ペンションの宿泊・サウナ・キャンプ予約管理、顧客管理、帳票出力、メール自動化
+* **構成:**
+  1. **Google AppSheet:** 予約入力、顧客管理、データベース、Automation
+  2. **GAS (Backend):** メール自動送信、Googleカレンダー同期、楽天メール取込、HP予約Webhook
+  3. **GAS (Frontend WebApp):** 宿泊カレンダー、サウナ予約表、当日リストのWeb表示
+* **データソース:** Google Spreadsheet (`1kOgnZj...`)
+
+## 2. データベース構成 (AppSheet Tables)
+共有された画像に基づく詳細構成。
+
+| テーブル名 | シート名 | 主なカラム・役割 |
+| :--- | :--- | :--- |
+| **01_Customers** | 01_Customers | **顧客マスタ**: CustomerID, 姓名(漢字/かな), 連絡先(Tel/Email), 住所, 勤務先, 団体名, 登録日, 削除フラグ, 顧客氏名(VC) |
+| **02_Inventory** | 02_Inventory | **施設マスタ**: InventoryID, 名称, 種別(Enum:宿泊/サウナ/キャンプ), 定員, 最大定員, 基本料金 |
+| **03_Add_Ons** | 03_Add_Ons | **オプション**: AddOnID, オプション名, 単価, 対象種別, 在庫管理(Yes/No) |
+| **04_Blocked_Dates** | 04_Blocked_Dates | **休館設定**: BlockID, 開始日, 終了日, 対象(EnumList), 理由 |
+| **05_Reservations_Pool** | 05_Reservations_Pool | **予約データ(Main)**:<br>・基本: 予約ID, 顧客ID(Ref), 経路, 種別, ステータス(確定/プール/キャンセル)<br>・日程: In日, Out日, In時刻, Out時刻<br>・人数: 大人, 子供, 幼児_食事あり, 幼児_食事なし, 宿泊人数<br>・詳細: プラン, 部屋ID(Ref), 夕食不要, 予約詳細, メモ, 返信メッセージ<br>・楽天: 楽天メールID, 楽天部屋タイプ, 最終請求金額<br>・制御: メール送信済, メール送信しない, キャンセル申請 |
+| **06_Reservation_Details**| 06_Reservation_Details | **予約明細**: DetailID, 予約ID, オプションID, 数量, 小計 |
+| **07_Occupancy** | 07_Occupancy | **在庫消費**: OccupancyID, 予約ID, 施設ID, 開始日時, 終了日時 |
+| **08_HP_Inventory_Status**| 08_HP_Inventory_Status | **HP用在庫**: 日付, 各種別(宿泊/キャンプ/サウナ)の総枠・予約数・空き状況・最安値 |
+| **09_Calendar_Settings** | 09_Calendar_Settings | 設定: ServiceKey, LimitDate |
+| **10_Sign** | 10_Sign | **署名**: SingID, 予約ID, 署名画像, 同意日時, 確認済, レジカード情報(住所等) |
+| **11_Pricing_Seasons** | 11_Pricing_Seasons | シーズン定義: 名称, 開始日, 終了日 |
+| **12_Pricing_Rates** | 12_Pricing_Rates | 料金表: 区分, プラン, シーズン, シングル利用, 単価 |
+| **13_Room_Calendar_View** | 13_Room_Calendar_View | カレンダーView用: 日付, 部屋ID, 表示名, ColorCategory |
+| **14_Inquiries** | 14_Inquiries | **問合せ**: InquiryID, 受信日時, 顧客ID, 予約ID, 名前, 連絡先, 件名, メッセージ, ステータス |
+| **99_Operation_Log** | 99_Operation_Log | **ログ**: LogID, 日時, 予約ID, 操作ユーザー, 変更内容 |
+
+## 3. AppSheet Automation 設定
+以下の条件でGAS連携を実行。
+
+* **プロセス:** `05_Reservation_Confirmed_Master` (予約確定時)
+* **メール送信判定 (Condition):**
+AND( [予約経路] <> "楽天トラベル", [メール送信しない] = FALSE )
+
+* **フロー:**
+1. 実績レコード (`07_Occupancy`) 作成等
+2. メール送信判定 (YesならGAS `sendMailFromAppSheet` 実行 / Noならスキップ)
+3. 送信済フラグ更新 (`[メール送信済]` = TRUE)
+4. Googleカレンダー連携 (GAS `syncCalendarFromAppSheet` 実行)
+
+* **プロセス:** `05_Reservation_Cancelled_Master` (キャンセル時)
+* **フロー:**
+1. 施設部屋の解放
+2. 在庫データ削除 (`07_Occupancy` 削除)
+3. メール送信判定 (YesならGAS `sendCancellationMailFromAppSheet` 実行)
+4. Googleカレンダー連携 (削除処理)
+
+* **プロセス:** `05_Reservation_Status_満室` (満室NG時)
+* **フロー:**
+1. メール送信確認
+2. YesならGAS `sendSoldOutMailFromAppSheet` 実行
+
+* **プロセス:** `Log_Changes` (変更ログ)
+* **フロー:** `99_Operation_Log` テーブルにログレコードを追加 (`[予約ID]`, `USEREMAIL()`, `NOW()` 等)
+
+* **プロセス:** `Update_Inventory_On_Change` (部屋/日付変更時)
+* **フロー:** 関連Occupancyを一括削除 → 在庫レコード再作成
+
+## 4. Webアプリケーション (GAS Frontend)
+**ファイル:** `WebApp.gs`, `index.html`, `Config.gs`
+
+### 【機能仕様】
+1. **宿泊カレンダー (タブ1)**
+ * **形式:** ガントチャート (縦:部屋, 横:日付)。
+ * **期間:** 過去10日～未来90日 (Config定数)。
+ * **UI:** 動きがある日(In/Out)は幅広(160px)、中日は幅狭(50px)の可変列幅。
+ * **表示:** 「名前 様」+(問合せ有なら✉️)。クリックで詳細モーダル。
+
+2. **本日の宿泊者 (タブ2)**
+ * **形式:** 当日リスト。印刷対応(A4横)。
+ * **表示:** 部屋, 名前, IN時間(18時以降オレンジ), 泊数, 人数内訳(幼児食有無含む), 夕食要否, アイコン(💬/✉️)。
+ * **集計:** 全体人数、食事あり人数を集計表示。
+
+3. **サウナ予約 (タブ3)**
+ * **形式:** タイムスケジュール (縦:時間 5:00-24:00, 横:日付)。
+ * **期間:** 過去3日～未来30日 (JS内定数)。
+ * **UI:** 左側の時間軸と上部の日付ヘッダーを**完全固定(Sticky)**。
+ * **表示:** 縦長のバーで「名前 様」+「開始-終了時間」を表示。色は宿泊と統一(確定:薄橙/仮:薄青)。
+
+## 5. バックエンド処理 (GAS Backend)
+**ファイル:** `MailSender.gs`, `CalendarSync.gs`, `EmailTrigger.gs`, `Webhook.gs`
+
+* **メール送信:** 予約確定(.ics添付), キャンセル, 満室お断り。
+* *ロジック:* 種別が「サウナ/キャンプ」でプラン名空欄時、種別名をプラン名として補完表示。
+* **カレンダー同期:**
+* 宿泊＝終日イベント、サウナ/キャンプ＝時間指定イベント。
+* 同日同室予約はタイトルに「👥」付与。
+* **予約取込:**
+* 楽天トラベル通知メール解析 (重複排除・キャンセル対応)。
+* 自社HP (Webhook) からの予約作成。
+
+## 6. 既知の制約
+* **楽天トラベル連携:** 在庫・プランの書き換えAPIがないため、AppSheet側からは読み取り専用。在庫調整は別途管理画面で行う。
+
+---
+以上が現状です。ここから開発を再開してください。

@@ -6,7 +6,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // ★★★ ここに GASのウェブアプリURL を貼り付ける ★★★
-$gas_url = "https://script.google.com/macros/s/AKfycbwmeh7173DHkZjLki5CV8c015Pu4qgeYZ89EIyaKcvHjORfYZL_fbgoic3HwwRVyFlU2A/exec";
+$gas_url = "https://script.google.com/macros/s/AKfycbyh0_okeimpETrVAjo9KNeRL7n7l1W5LnSfFZEhvmCFiyCn0-mSkUg2jAGTXRZKrEABOA/exec";
 
 get_header(); 
 ?>

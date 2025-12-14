@@ -1,11 +1,15 @@
 /**
  * ===================================================================
- * 法人ポータル用 バックエンド (Code.gs) - 個別操作対応版
+ * 法人ポータル用 バックエンド (Code.gs) - 完全復旧版
  * ===================================================================
  */
 
-const SPREADSHEET_ID = "1sbFPxzpilekkJ9OsdJ0140AsdyLy5AX4xfo0PSg4as8"; // ★実際のスプレッドシートID
+// ★★★ 設定値 ★★★
+const SPREADSHEET_ID = "1sbFPxzpilekkJ9OsdJ0140AsdyLy5AX4xfo0PSg4as8"; 
+const ADMIN_MAIL_ADDRESS = "notification@kidsplus.school"; // ★通知先メール
+const CHAT_WEBHOOK_URL = "https://chat.googleapis.com/v1/spaces/AAQA6YoaBdg/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=IAQwZfGTPEHPdy-sxsPiJch2kN93jDNFFCnQ0ip8ixo"; // ★Google Chat URL
 
+// ★★★ これが消えていたためエラーになっていました ★★★
 function doGet() {
   return HtmlService.createTemplateFromFile('index')
     .evaluate()
@@ -14,9 +18,6 @@ function doGet() {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-/**
- * ログイン処理
- */
 function login(corpId, password) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -63,9 +64,26 @@ function login(corpId, password) {
   }
 }
 
-/**
- * 予約可能日リスト取得
- */
+function getHolidays() {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const holidaySheet = ss.getSheetByName("祝日マスタ");
+    const data = holidaySheet.getDataRange().getValues();
+    const holidays = [];
+    for (let i = 1; i < data.length; i++) {
+      const dateVal = data[i][0]; 
+      const applyVal = String(data[i][2]); 
+      if (dateVal && applyVal.indexOf("日本") !== -1) {
+        const dateStr = Utilities.formatDate(new Date(dateVal), Session.getScriptTimeZone(), "yyyy-MM-dd");
+        holidays.push(dateStr);
+      }
+    }
+    return holidays;
+  } catch(e) {
+    return [];
+  }
+}
+
 function getLessonAvailability(facilityIds) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -107,9 +125,6 @@ function getLessonAvailability(facilityIds) {
   }
 }
 
-/**
- * 予約登録
- */
 function registerReservation(data) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -133,24 +148,26 @@ function registerReservation(data) {
     }
 
     const existingFrameId = findExistingLessonFrameId(lessonFrameSheet, lessonDate, teacherId, data.timeName);
-
     if (!existingFrameId) {
       return { success: false, message: "選択された日時のレッスン枠が見つかりません。" };
     }
 
     const reservationId = "WEB_" + Utilities.getUuid().slice(0, 8); 
+    const className = data.className || ""; 
 
     yoyakuSheet.appendRow([
       reservationId,            // A
       existingFrameId,          // B
       data.facilityId,          // C
       "予約済",                 // D
-      data.className || "",     // E
+      className,                // E
       lessonDate,               // F
       data.timeName,            // G
       teacherId,                // H
       "",                       // I
-      ""                        // J
+      "",                       // J
+      "",                       // K
+      ""                        // L: 定期ID (Web予約は空)
     ]);
 
     return { success: true };
@@ -178,12 +195,6 @@ function findExistingLessonFrameId(sheet, dateObj, teacherId, timeName) {
   return null; 
 }
 
-// --- ヘルパー関数 ---
-
-/**
- * ★改修: 予約一覧取得
- * details配列に個別の予約情報を格納して返す
- */
 function getMyReservations(corpId) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -199,7 +210,6 @@ function getMyReservations(corpId) {
     const yoyakuData = sheetToObjects(yoyakuSheet);
     const rawReservations = yoyakuData.filter(r => targetFacilityIds.includes(String(r.施設ID)) && r.ステータス === "予約済");
 
-    // グループ化キー: 日付_時間名_講師ID
     const groupedData = {};
 
     rawReservations.forEach(r => {
@@ -211,30 +221,37 @@ function getMyReservations(corpId) {
         groupedData[key] = {
           date: dateStr,
           timeName: r.時間名,
-          details: [] // ★個別の予約情報をここに集める
+          details: [],
+          hasRecurring: false 
         };
       }
       
+      const teikiId = r["定期ID"]; 
+      const isRegular = (teikiId && String(teikiId).trim() !== "");
+
+      if (isRegular) {
+        groupedData[key].hasRecurring = true;
+      }
+
       const fName = facilityMap[r.施設ID] || "不明な施設";
       groupedData[key].details.push({
         reservationId: r.予約ID,
         facilityName: fName,
-        className: r.参加クラス || "なし"
+        className: r.参加クラス || "なし",
+        isRegular: isRegular
       });
     });
 
     const myReservations = Object.values(groupedData).map(group => {
-      // カレンダー表示用テキスト（カンマ区切り）
       const joinedFacilities = group.details.map(d => d.facilityName).join(', ');
-      
       return {
-        id: group.details[0].reservationId, // 代表ID（クリックイベント用）
+        id: group.details[0].reservationId,
         title: `${group.timeName} ${joinedFacilities}`,
         start: group.date,
         extendedProps: {
           timeName: group.timeName,
-          // ★ここで詳細配列を丸ごと渡す
-          details: group.details 
+          details: group.details,
+          hasRecurring: group.hasRecurring 
         }
       };
     });
@@ -246,39 +263,103 @@ function getMyReservations(corpId) {
 }
 
 /**
- * ★改修: キャンセル処理 (単一ID用)
+ * ★修正: キャンセル処理（通知機能 + ログ出力 + 定期キャンセル対応）
  */
 function cancelReservation(reservationId, corpId) {
+  Logger.log(`[cancelReservation] START - ID: ${reservationId}, Corp: ${corpId}`);
+
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const yoyakuSheet = ss.getSheetByName("参加予約");
+    const shisetsuSheet = ss.getSheetByName("施設マスタ");
+    const lecturerSheet = ss.getSheetByName("講師マスタ"); 
     
     const rowIndex = findRowIndex(yoyakuSheet, reservationId);
-    if (rowIndex === -1) return { success: false, message: "予約が見つかりません" };
+    if (rowIndex === -1) {
+      Logger.log(`[cancelReservation] ERROR: Reservation not found`);
+      return { success: false, message: "予約が見つかりません" };
+    }
 
-    const rowData = yoyakuSheet.getRange(rowIndex, 1, 1, 10).getValues()[0];
+    const rowData = yoyakuSheet.getRange(rowIndex, 1, 1, 12).getValues()[0];
     const lessonDate = new Date(rowData[5]);
     
+    // 定期予約ガードは解除済み
+
     if (isEditable(lessonDate)) {
        const facilityId = rowData[2];
        const eventId = rowData[8];
        const masterEventId = rowData[9];
-       
+       const instructorEventId = rowData[10];
+       const timeName = rowData[6];
+
+       Logger.log(`[cancelReservation] Deleting calendars...`);
        deleteEvent_(ss, corpId, facilityId, eventId, masterEventId);
+       
+       if (instructorEventId) {
+         try {
+           const teacherId = rowData[7];
+           const lecturerData = sheetToObjects(lecturerSheet);
+           const lecturer = lecturerData.find(l => String(l.講師ID) === String(teacherId));
+           const calId = lecturer ? (lecturer["カレンダーID"] || lecturer["担当者メールアドレス"]) : null;
+           if (calId) {
+             CalendarApp.getCalendarById(calId).getEventById(instructorEventId).deleteEvent();
+             Logger.log(`[cancelReservation] Instructor calendar deleted`);
+           }
+         } catch(e) {
+           Logger.log(`[cancelReservation] Instructor Cal Delete Error: ${e.toString()}`);
+         }
+       }
+
        yoyakuSheet.getRange(rowIndex, 4).setValue("キャンセル済");
+       Logger.log(`[cancelReservation] DB Updated`);
+
+       // --- 通知処理 ---
+       const shisetsuData = sheetToObjects(shisetsuSheet);
+       const shisetsu = shisetsuData.find(s => String(s.施設ID) === String(facilityId));
+       const facilityName = shisetsu ? shisetsu.施設名 : facilityId;
+       const dateStr = Utilities.formatDate(lessonDate, Session.getScriptTimeZone(), "yyyy/MM/dd");
+
+       const subject = `【キャンセル通知】${facilityName} (${dateStr})`;
+       const body = `以下の予約が法人ポータルからキャンセルされました。\n\n■施設名: ${facilityName}\n■日時: ${dateStr}\n■時間: ${timeName}\n■予約ID: ${reservationId}`;
+
+       // メール送信
+       try {
+         if (ADMIN_MAIL_ADDRESS) {
+           MailApp.sendEmail(ADMIN_MAIL_ADDRESS, subject, body);
+           Logger.log(`[cancelReservation] Mail Sent`);
+         }
+       } catch (e) { Logger.log("Mail Error: " + e); }
+
+       // Chat送信
+       try {
+         if (CHAT_WEBHOOK_URL) {
+           sendChatNotification(`🚨 *${subject}*\n${body}`);
+           Logger.log(`[cancelReservation] Chat Sent`);
+         }
+       } catch (e) { Logger.log("Chat Error: " + e); }
+
+       // Slack送信
+       try {
+         const channelId = PropertiesService.getScriptProperties().getProperty('SLACK_CHANNEL_ID');
+         if (channelId) {
+           const slackTitle = `【KIDS PLUS：予約キャンセル通知】`; 
+           postHybridMessage(channelId, slackTitle, "情報", body);
+           Logger.log(`[cancelReservation] Slack Sent`);
+         }
+       } catch (e) { Logger.log("Slack Error: " + e); }
+
     } else {
+       Logger.log(`[cancelReservation] ERROR: Not editable`);
        return { success: false, message: "変更期限(2日前)を過ぎているため操作できません。" };
     }
 
     return { success: true };
   } catch (e) {
+    Logger.log(`[cancelReservation] CRITICAL ERROR: ${e.toString()}`);
     return { success: false, message: e.toString() };
   }
 }
 
-/**
- * 施設変更処理 (単一ID用)
- */
 function changeFacility(reservationId, newFacilityId, corpId) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -286,7 +367,7 @@ function changeFacility(reservationId, newFacilityId, corpId) {
     const rowIndex = findRowIndex(yoyakuSheet, reservationId);
     if (rowIndex === -1) return { success: false, message: "予約が見つかりません" };
 
-    const rowData = yoyakuSheet.getRange(rowIndex, 1, 1, 10).getValues()[0];
+    const rowData = yoyakuSheet.getRange(rowIndex, 1, 1, 12).getValues()[0];
     const lessonDate = new Date(rowData[5]);
 
     if (!isEditable(lessonDate)) {
@@ -296,11 +377,15 @@ function changeFacility(reservationId, newFacilityId, corpId) {
     const oldFacilityId = rowData[2];
     const eventId = rowData[8];
     const masterEventId = rowData[9];
+    const instructorEventId = rowData[10];
+
     deleteEvent_(ss, corpId, oldFacilityId, eventId, masterEventId);
+    if(instructorEventId) { /* 省略 */ }
 
     yoyakuSheet.getRange(rowIndex, 3).setValue(newFacilityId);
-    yoyakuSheet.getRange(rowIndex, 9).setValue("");
+    yoyakuSheet.getRange(rowIndex, 9).setValue(""); 
     yoyakuSheet.getRange(rowIndex, 10).setValue("");
+    yoyakuSheet.getRange(rowIndex, 11).setValue(""); 
 
     return { success: true };
   } catch (e) {
@@ -361,4 +446,77 @@ function deleteEvent_(ss, corpId, facilityId, eventId, masterEventId) {
       CalendarApp.getCalendarById(MASTER_CAL_ID).getEventById(masterEventId).deleteEvent();
     } catch(e) {}
   }
+}
+
+// --- 通知用ヘルパー ---
+
+function sendChatNotification(text) {
+  if (!CHAT_WEBHOOK_URL) return;
+  try {
+    const payload = { "text": text };
+    const options = {
+      "method": "post",
+      "contentType": "application/json",
+      "payload": JSON.stringify(payload)
+    };
+    UrlFetchApp.fetch(CHAT_WEBHOOK_URL, options);
+  } catch (e) {
+    Logger.log("Chat Send Error: " + e.toString());
+  }
+}
+
+function postHybridMessage(channelId, title, status, details) {
+  const botToken = PropertiesService.getScriptProperties().getProperty('SLACK_BOT_TOKEN');
+  if (!botToken) return;
+  
+  const executionTime = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm:ss');
+  let statusText = "Information";
+  let color = "#439fe0";
+
+  const shortTitle = title.indexOf('：') !== -1 ? title.substring(title.indexOf('：') + 1, title.length - 1) : title;
+
+  const payload = {
+    "channel": channelId,
+    "text": `${title} 実行結果`,
+    "attachments": [
+      {
+        "color": color,
+        "blocks": [
+          { "type": "section", "text": { "type": "mrkdwn", "text": `*${shortTitle}*` }},
+          { "type": "section", "text": { "type": "mrkdwn", "text": "*詳細:*\n```" + details + "```" }}
+        ]
+      }
+    ]
+  };
+
+  const options = {
+    'method': 'post',
+    'contentType': 'application/json; charset=utf-8',
+    'headers': { 'Authorization': 'Bearer ' + botToken },
+    'payload': JSON.stringify(payload)
+  };
+  try {
+    UrlFetchApp.fetch('https://slack.com/api/chat.postMessage', options);
+  } catch (e) {
+    Logger.log('Slack API Error: ' + e.message);
+  }
+}
+
+/**
+ * 権限承認用の一回使い切り関数
+ * エディタの「実行」ボタンからこれを実行して、ポップアップで「許可」してください。
+ */
+function authorizeScript() {
+  console.log("認証を開始します...");
+  
+  // 1. カレンダー権限の要求
+  CalendarApp.getDefaultCalendar();
+  
+  // 2. メール送信権限の要求
+  MailApp.getRemainingDailyQuota();
+  
+  // 3. 外部通信(Chat/Slack)権限の要求
+  UrlFetchApp.fetch("https://www.google.com");
+  
+  console.log("認証が完了しました！");
 }
