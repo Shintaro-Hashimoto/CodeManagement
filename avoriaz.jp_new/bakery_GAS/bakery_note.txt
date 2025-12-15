@@ -1,0 +1,51 @@
+# 開発コンテキストの引き継ぎ依頼 (bread_note)
+現在運用の「パン工房MARIKO 受注・発送管理システム」の続きをお願いします。
+以下の仕様と現状を理解した上で、指示を待ってください。
+
+## 1. システム概要
+* **目的:** シュトーレン等の受注管理、ヤマト運輸(B2)連携、発送管理、顧客管理、メール自動送信
+* **構成:**
+    1. **Google AppSheet:** 注文データの閲覧、検索、発送カレンダー表示、ステータス管理
+    2. **GAS (Backend):** WPフォーム/メールからの受注取込、金額計算、B2用CSV生成、発送実績取込(運賃反映)
+    3. **Infrastructure:** ヤマト運輸 B2クラウド (配送伝票発行)
+* **データソース:** Google Spreadsheet (`PanKoboDB`)
+
+## 2. データベース構成 (AppSheet Tables)
+共有された画像に基づく詳細構成。
+
+| テーブル名 | シート名 | 主なカラム・役割 |
+| :--- | :--- | :--- |
+| **00_Customers** | *00_Customers* | **顧客マスタ**: `CustomerID` (Key), `顧客名` (Label), Email, 電話番号, 初回/最終注文日 |
+| **01_Orders** | *01_Orders* | **注文親データ**: `OrderID` (Key), `表示名` (Label), ステータス, お届け希望日, **金額計算**(`商品単価`, `送料`, `請求合計金額`), B2連携(`発送完了日`, `伝票番号`) |
+| **02_Recipients** | *02_Recipients* | **お届け先明細**: `RecipientID` (Key), `お届け先氏名` (Label), `OrderID (Ref)`, 住所, `配送数量`, `伝票番号` |
+| **03_Senders** | *03_Senders* | **送り主マスタ**: `SenderID` (Key), `送り主名` (Label), 住所, 電話番号 |
+| **04_B2_CSV_Upload** | *04_B2_CSV_Upload* | **B2連携用**: `お客様管理番号` (Key), 出荷予定日, お届け先情報, 品名, 記事, ご請求コード等 |
+| **05_Shipping_Calendar** | *05_Shipping_Calendar* | **発送カレンダー(ReadOnly)**: `CalendarID` (Key/Text式), `Date`, `TotalCount`, `Label`. GAS/関数で集計されたデータを表示 |
+| **09_System_Trigger** | *09_System_Trigger* | **トリガー管理**: `TriggerID` (Key), `TargetDate`, `RequestedBy`. GAS発火用 |
+
+## 3. Automation構成 (AppSheet Bots)
+GASスクリプト呼び出しを含む自動化設定。
+
+| Bot名 | トリガーイベント | 実行プロセス (Task) |
+| :--- | :--- | :--- |
+| **Send Confirmed Email** | **Orders**: 受注確定時 | **Email**: 注文確定メールを送信 |
+| **Send Cancelled Email** | **Orders**: キャンセル時 | **Email**: キャンセル通知メールを送信 |
+| **Send Shipping Email** | **Orders**: `発送完了日`入力時 | **Call Script**: GAS `sendShippingNotification` を実行 (追跡番号・リンク付メール送信) |
+| **Generate B2 CSV** | **System_Trigger**: 行追加時 | **Call Script**: GAS `createAndSaveB2CSV` を実行 (引数: `TargetDate`, `UserEmail`) |
+
+## 4. GASファイル構成と役割 (Script Functionality)
+自動化を担うバックエンドスクリプト群。
+
+* **WebApp_Direct.gs (API):** WordPressフォームからのPOST受信。注文・顧客データの保存。**固定単価(5,500円)×個数**での仮金額計算を実行。
+* **Email_Trigger.gs (Parser):** メール注文の定期取込。正規表現による本文解析とDB登録。
+* **B2_Export.gs (CSV Gen):** 指定日の注文をヤマトB2形式のCSVに出力・ドライブ保存。固定値（品名:シュトーレン, 荷扱い:ナマモノ等）を適用。
+* **B2_Import.gs (Sync):** B2からの出力CSV（発送データ/運賃データ）を取込。
+    * **発送データ:** 伝票番号反映、ステータス「発送済」更新。
+    * **運賃データ:** 送料実費を反映し、**合計金額を再計算(上書き)**。
+* **Notification_Trigger.gs (Mail):** ステータス変更時のメール送信（発送完了メールには追跡リンクを埋め込み）。
+* **_Common.gs (Util):** シートID管理、名寄せロジック、ログ記録。
+
+## 5. 重要なビジネスロジック (Key Rules)
+* **金額計算フロー:** 受注時は「送料なし・商品代のみ」で記録。B2取込時に「実費送料」が判明し、合計金額が確定（更新）される仕様。
+* **カレンダーキー:** `05_Shipping_Calendar` はスプレッドシート関数で集計されるため、AppSheet側では日付文字列化した `CalendarID` をキーとして設定している。
+* **伝票番号:** B2 CSV取込時にハイフンなしで来る場合があるが、システム内では `0000-0000-0000` 形式に整形して保存・通知する。

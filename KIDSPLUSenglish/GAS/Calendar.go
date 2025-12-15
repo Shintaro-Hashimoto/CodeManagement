@@ -140,11 +140,14 @@ function syncNewReservations() {
 /**
  * 2. 予約キャンセル時にカレンダーから削除する関数
  * (WebApp.gs から呼ばれる)
- * * @param {string} eventId - 法人カレンダーのイベントID (I列)
+ * @param {string} eventId - 法人カレンダーのイベントID (I列)
  * @param {string} masterEventId - マスターカレンダーのイベントID (J列)
  * @param {string} facilityId - 施設ID (法人カレンダー特定用)
+ * @param {string} [koushiEventId] - 講師カレンダーのイベントID (K列) ★追加
+ * @param {string} [koushiId] - 講師ID ★追加
+ * @param {Array} [koushiData] - 講師マスタデータ(省略可) ★追加
  */
-function deleteEventFromCalendars(eventId, masterEventId, facilityId) {
+function deleteEventFromCalendars(eventId, masterEventId, facilityId, koushiEventId, koushiId, koushiData) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const shisetsuSheet = ss.getSheetByName("施設マスタ");
   const houjinSheet = ss.getSheetByName("法人マスタ");
@@ -154,16 +157,20 @@ function deleteEventFromCalendars(eventId, masterEventId, facilityId) {
 
   // A. 法人カレンダーから削除
   if (eventId) {
-    const shisetsu = shisetsuData.find(s => s.施設ID === facilityId);
+    // ★修正: String()変換で比較 (型不一致防止)
+    const shisetsu = shisetsuData.find(s => String(s.施設ID) === String(facilityId));
     if (shisetsu) {
-      const houjin = houjinData.find(h => h.法人ID === shisetsu.法人ID);
+      const houjin = houjinData.find(h => String(h.法人ID) === String(shisetsu.法人ID)); // ここもString比較推奨
       if (houjin && houjin.連携カレンダーID) {
         try {
           const cal = CalendarApp.getCalendarById(houjin.連携カレンダーID);
+          // イベントが存在するか確認してから削除
           const event = cal.getEventById(eventId);
           if (event) {
             event.deleteEvent();
             Logger.log("法人カレンダーから削除: " + eventId);
+          } else {
+            Logger.log("法人カレンダー: 既に削除済みか見つかりません: " + eventId);
           }
         } catch (e) {
           Logger.log("法人カレンダー削除エラー: " + e.toString());
@@ -180,9 +187,38 @@ function deleteEventFromCalendars(eventId, masterEventId, facilityId) {
       if (event) {
         event.deleteEvent();
         Logger.log("マスターカレンダーから削除: " + masterEventId);
+      } else {
+        Logger.log("マスターカレンダー: 既に削除済みか見つかりません: " + masterEventId);
       }
     } catch (e) {
       Logger.log("マスターカレンダー削除エラー: " + e.toString());
+    }
+  }
+
+  // C. 講師カレンダーから削除 (★追加)
+  if (koushiEventId && koushiId) {
+    // データが引数で渡されていない場合はここで読み込む(WebApp等からの呼び出し互換性のため)
+    if (!koushiData) {
+      const koushiSheet = ss.getSheetByName("講師マスタ");
+      koushiData = sheetToObjects(koushiSheet);
+    }
+
+    const koushi = koushiData.find(k => String(k.講師ID) === String(koushiId));
+    if (koushi && koushi.カレンダーID) {
+      try {
+        const koushiCal = CalendarApp.getCalendarById(koushi.カレンダーID);
+        if (koushiCal) {
+          const event = koushiCal.getEventById(koushiEventId);
+          if (event) {
+            event.deleteEvent();
+            Logger.log("講師カレンダーから削除: " + koushiEventId);
+          } else {
+            Logger.log("講師カレンダー: 既に削除済みか見つかりません: " + koushiEventId);
+          }
+        }
+      } catch (e) {
+        Logger.log("講師カレンダー削除エラー: " + e.toString());
+      }
     }
   }
 }
