@@ -48,7 +48,7 @@ get_header();
 
     /* フォームコンテナ (共通スタイルを継承しつつ調整) */
     .cancel-container {
-        max-width: 600px; /* 入力項目が少ないので少し幅を狭く */
+        max-width: 800px; /* 入力項目が少ないので少し幅を狭く */
         margin: 0 auto;
         padding: 40px;
         background: #fff;

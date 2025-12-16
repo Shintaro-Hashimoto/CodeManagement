@@ -24,7 +24,28 @@ function extractDataFromMailBody_Rakuten(body, status) {
   const rawNinzuuStr = body.match(/人数\s*:\s*(.*?)\n/s)?.[1].trim() || '';
   result.宿泊人数_RAW = rawNinzuuStr; 
   result.楽天部屋タイプ = body.match(/部屋タイプ\s*:\s*(.*?)\n/s)?.[1].trim() || '';
-  result.楽天宿泊プラン = body.match(/宿泊プラン\s*:\s*(.*?)\n/s)?.[1].trim() || '';
+  
+  // ★ 修正: プラン自動判定ロジック (夕食不要フラグ連動)
+  const rawPlan = body.match(/宿泊プラン\s*:\s*(.*?)\n/s)?.[1].trim() || '';
+  result.予約詳細 = rawPlan; // 元のプラン名は「予約詳細」へ保存
+
+  // キーワード判定
+  let detectedPlan = 'その他';
+  let dinnerSkip = ''; // ブランクで初期化(その他用)
+
+  if (rawPlan.includes('２食') || rawPlan.includes('2食')) {
+    detectedPlan = '1泊2食';
+    dinnerSkip = false; // 夕食あり
+  } else if (rawPlan.includes('朝食') || rawPlan.includes('朝のみ')) {
+    detectedPlan = '1泊朝食付';
+    dinnerSkip = true;  // 夕食なし
+  } else if (rawPlan.includes('素泊') || rawPlan.includes('食事なし') || rawPlan.includes('食事無')) {
+    detectedPlan = '食事なし';
+    dinnerSkip = true;  // 夕食なし
+  }
+
+  result.楽天宿泊プラン = detectedPlan; // システム用プラン名
+  result.noDinner = dinnerSkip;         // 夕食不要フラグ
   
   const amountMatch = body.match(/合計\(A\)\s*:\s*(\d+)\s*円/);
   result.最終請求金額 = amountMatch ? parseInt(amountMatch[1], 10) : '';
@@ -153,6 +174,25 @@ function processEmail(message) {
     sheet.getRange(foundRow, statusIndex + 1).setValue('キャンセル');
     const reservationId = data[foundRow - 1][idIndex];
     if (reservationId) deleteOccupancyRecords(reservationId);
+    
+    // ★ 追加: キャンセル時の操作ログ保存
+    try {
+      const logSheet = ss.getSheetByName('99_Operation_Log');
+      if (logSheet) {
+        const logId = 'LOG_' + Utilities.getUuid().substring(0, 8);
+        const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy/MM/dd HH:mm:ss');
+        logSheet.appendRow([
+          logId,
+          timestamp,
+          reservationId,
+          'System (Rakuten)',
+          'キャンセル通知受信: ステータス変更(確定→キャンセル)'
+        ]);
+      }
+    } catch(e) {
+      Logger.log('ログ保存エラー: ' + e.toString());
+    }
+
     Logger.log('楽天キャンセル処理完了: ' + bookingId);
     
   } else if (status === 'プール' && foundRow === -1) { 

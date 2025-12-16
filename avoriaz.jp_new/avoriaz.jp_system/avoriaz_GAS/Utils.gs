@@ -149,19 +149,27 @@ function createNewReservationRow(headers, extractedData, reservationSource) {
     newRow[headers.indexOf('楽天部屋タイプ')] = extractedData.楽天部屋タイプ;
   } 
   
-  // HP予約固有情報 (詳細)
-  // ※ 「予約詳細」列にお客様の要望を入れる。「メモ」列は管理者用なので空けておく。
-  if (reservationSource.route === 'フォーム') { 
-    newRow[headers.indexOf('予約詳細')] = extractedData.予約詳細 || '';
+  // ★ 修正: 予約詳細への書き込み (楽天も含む)
+  // 以前はフォームのみでしたが、楽天のプラン名などもここに入れるため条件を緩和
+  if (headers.indexOf('予約詳細') !== -1 && extractedData.予約詳細) {
+    newRow[headers.indexOf('予約詳細')] = extractedData.予約詳細;
   }
 
   // プラン情報 (J列)
   const planIndex = headers.indexOf('プラン'); 
   if (planIndex !== -1) {
     if (reservationSource.route === '楽天トラベル') {
-      newRow[planIndex] = extractedData.楽天宿泊プラン || '';
+      newRow[planIndex] = extractedData.楽天宿泊プラン || ''; // EmailTrigger側で自動判定したもの
     } else if (reservationSource.route === 'フォーム') {
       newRow[planIndex] = extractedData.HP食事プラン || '';
+    }
+  }
+
+  // ★ 追加: 夕食不要フラグの書き込み
+  if (headers.indexOf('夕食不要') !== -1) {
+    // 楽天の場合は自動判定結果を使用
+    if (reservationSource.route === '楽天トラベル' && extractedData.noDinner !== '') {
+      newRow[headers.indexOf('夕食不要')] = extractedData.noDinner;
     }
   }
   
