@@ -1,9 +1,23 @@
 // ==========================================================
-// Webhook.gs - CF7からのデータ受信 (doPost)
+// Webhook.gs - フォーム受信 & Square決済通知 (doPost)
 // ==========================================================
+
+// ★ Square Signature Key (先ほど取得したキー)
+const SQUARE_SIGNATURE_KEY = '_vPAnA9vGB9lQ8kOy0m7kw';
+const NOTIFICATION_URL = ScriptApp.getService().getUrl(); // 現在のスクリプトURL
 
 function doPost(e) {
   try {
+    // ----------------------------------------------------
+    // 1. Squareからの通知かどうか判定
+    // ----------------------------------------------------
+    if (isSquareRequest(e)) {
+      return handleSquarePayment(e);
+    }
+
+    // ----------------------------------------------------
+    // 2. 既存のHPフォーム/キャンセル処理 (JSONパース)
+    // ----------------------------------------------------
     const jsonData = JSON.parse(e.postData.contents);
     
     // 分岐: キャンセル処理
@@ -44,7 +58,101 @@ function doPost(e) {
 }
 
 // ----------------------------------------------------------
-// ★ 新機能: Webお問い合わせ処理関数
+// ★ 新機能: Square決済通知の処理
+// ----------------------------------------------------------
+function isSquareRequest(e) {
+  // Squareからのリクエストには必ずこの署名ヘッダーが含まれる
+  return e.postData && e.postData.type === "application/json" && e.requestHeaders && e.requestHeaders['x-square-hmac-sha256'];
+}
+
+function handleSquarePayment(e) {
+  const signature = e.requestHeaders['x-square-hmac-sha256'];
+  const body = e.postData.contents;
+  
+  // 署名検証 (セキュリティ対策: 正しいキーでハッシュ化して一致するか確認)
+  // ※検証失敗でも一旦ログに残して200を返す(リトライ防止)のが一般的ですが、ここでは簡易実装
+  if (!validateSquareSignature(body, signature)) {
+    Logger.log('Square Signature Verification Failed');
+    // セキュリティ上はエラーだが、Square側の再送ループを防ぐため200を返すこともある
+    return ContentService.createTextOutput('Signature Mismatch').setMimeType(ContentService.MimeType.TEXT); 
+  }
+
+  const json = JSON.parse(body);
+  
+  // テスト通知(webhook.subscription.created)などはスキップ
+  if (json.type !== 'payment.updated') {
+    return ContentService.createTextOutput('Event Ignored').setMimeType(ContentService.MimeType.TEXT);
+  }
+
+  const paymentObj = json.data.object.payment;
+  const paymentId = paymentObj.id;
+  const status = paymentObj.status;
+  const amount = paymentObj.amount_money.amount; // 日本円の場合、整数(100円=100)
+  const currency = paymentObj.amount_money.currency;
+  const note = paymentObj.note || ''; // ここに予約ID(Gxxxxxxx)が入る想定
+  
+  // 予約IDの抽出 (メモ欄から "G" で始まる7桁以上の英数字を探す)
+  const reservationIdMatch = note.match(/(G[a-zA-Z0-9]{7})/);
+  const reservationId = reservationIdMatch ? reservationIdMatch[1] : '';
+
+  // スプレッドシートへ保存
+  savePaymentToSheet(paymentId, reservationId, amount, currency, status, note, JSON.stringify(json));
+
+  return ContentService.createTextOutput('Payment Processed').setMimeType(ContentService.MimeType.TEXT);
+}
+
+function validateSquareSignature(body, signature) {
+  // Squareの署名検証ロジック (HMAC-SHA256)
+  // Webhook URL + Body をキーでハッシュ化
+  const payload = NOTIFICATION_URL + body;
+  const rawSignature = Utilities.computeHmacSha256Signature(payload, SQUARE_SIGNATURE_KEY);
+  const computedSignature = Utilities.base64Encode(rawSignature);
+  return signature === computedSignature;
+}
+
+function savePaymentToSheet(paymentId, reservationId, amount, currency, status, note, rawData) {
+  const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
+  const sheet = ss.getSheetByName('15_Payments'); // 新しいシート
+  
+  if (!sheet) {
+    Logger.log('Error: 15_Payments Sheet not found');
+    return;
+  }
+  
+  // 重複チェック (PaymentIDが既に存在するか)
+  const data = sheet.getDataRange().getValues();
+  // ヘッダー行のみの場合はスキップ
+  if (data.length > 1) {
+    const squareIdIndex = 7; // H列 (0始まりで7番目)
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][squareIdIndex] === paymentId) {
+        Logger.log('Duplicate Payment Notification: ' + paymentId);
+        // ステータス更新が必要な場合はここでUPDATE処理を入れるが、今回はスキップ
+        return; 
+      }
+    }
+  }
+
+  const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy/MM/dd HH:mm:ss');
+  const appSheetId = 'PAY_' + Utilities.getUuid().substring(0, 8); // AppSheet用の一意キー
+
+  sheet.appendRow([
+    appSheetId,    // PaymentID (AppSheet用)
+    timestamp,     // 日時
+    reservationId, // 予約ID (Ref)
+    amount,        // 金額
+    currency,      // 通貨
+    status,        // ステータス
+    note,          // メモ
+    paymentId,     // SquareID (重複チェック用)
+    rawData        // RawData
+  ]);
+  
+  Logger.log(`Square決済保存: ${amount}円 (予約ID: ${reservationId})`);
+}
+
+// ----------------------------------------------------------
+// ★ 既存機能: Webお問い合わせ処理関数 (そのまま維持)
 // ----------------------------------------------------------
 function handleWebInquiry(data) {
   const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
@@ -54,7 +162,7 @@ function handleWebInquiry(data) {
     return ContentService.createTextOutput(JSON.stringify({status: 'error', message: 'Inquiry Sheet Not Found'}));
   }
 
-  // 1. 顧客IDの取得・生成 (既存の共通関数を利用)
+  // 1. 顧客IDの取得・生成
   const tempExtractedData = {
     氏名_せい: (data['your-name'] || '').split(/\s+/)[0],
     氏名_めい: (data['your-name'] || '').split(/\s+/)[1] || '',
@@ -80,7 +188,6 @@ function handleWebInquiry(data) {
     data['your-name'],
     data['your-email'],
     data['your-tel'],
-    // ★ 修正: 配列文字化け対策
     Array.isArray(data['your-subject']) ? data['your-subject'].join(', ') : (data['your-subject'] || ''),
     data['your-message'],
     '未対応', 
@@ -92,7 +199,7 @@ function handleWebInquiry(data) {
 }
 
 // ----------------------------------------------------------
-// Webキャンセル処理
+// Webキャンセル処理 (そのまま維持)
 // ----------------------------------------------------------
 function handleWebCancellation(data) {
   const inputId = data['reservation-id'].trim();
@@ -134,6 +241,7 @@ function handleWebCancellation(data) {
   }
   
   if (targetRowIndex === -1) {
+    saveUnknownCancelToInquiry(inputId, inputEmail, data['your-name'], cancelReason);
     return ContentService.createTextOutput(JSON.stringify({status: 'error', message: 'Reservation Not Found'}));
   }
   
@@ -231,7 +339,6 @@ function parseWebhookData(data) {
   result.Email = data['your-email'] || '';
   result.電話番号 = data['your-tel'] || '';
   
-  // ★ 修正: 人数 (幼児追加・配列文字化け対策)
   result.adults = data['num-adult'] ? parseInt(String(data['num-adult'])) : 0;
   result.children = data['num-child'] ? parseInt(String(data['num-child'])) : 0;
   result.toddler_meal = data['num-toddler-meal'] ? parseInt(String(data['num-toddler-meal'])) : 0;
@@ -309,4 +416,33 @@ function identifySourceFromWebhook(data) {
     source.service = 'キャンプ';
   }
   return source;
+}
+
+// ----------------------------------------------------------
+// ID不一致キャンセルを問い合わせシートに保存
+// ----------------------------------------------------------
+function saveUnknownCancelToInquiry(inputId, email, name, reason) {
+  try {
+    const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
+    const sheet = ss.getSheetByName(SHEET_NAME_INQUIRY); 
+    
+    if (!sheet) return;
+
+    const inquiryId = 'INQ_' + Utilities.getUuid().substring(0, 8);
+    const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy/MM/dd HH:mm:ss');
+    
+    const message = `【自動保存】キャンセル申請がありましたが、予約ID不一致のため自動処理されませんでした。\n` +
+                    `入力されたID: ${inputId}\n` +
+                    `入力された理由: ${reason}`;
+
+    sheet.appendRow([
+      inquiryId, timestamp, '', inputId, name || '不明', email, '',
+      'キャンセルID不一致', message, '未対応', ''
+    ]);
+    
+    Logger.log(`ID不一致キャンセルを問い合わせに保存: ${inquiryId}`);
+    
+  } catch (e) {
+    Logger.log('ID不一致保存エラー: ' + e.toString());
+  }
 }
