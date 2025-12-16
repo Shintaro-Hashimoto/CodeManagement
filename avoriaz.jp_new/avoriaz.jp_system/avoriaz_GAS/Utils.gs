@@ -22,7 +22,10 @@ function getOrCreateCustomerId(extractedData, reservationSource) {
   const givenNameHiraIndex = headers.indexOf('ふりがな_めい'); 
   const emailIndex = headers.indexOf('メールアドレス');
   const phoneIndex = headers.indexOf('電話番号');
-  const registrationDateIndex = headers.indexOf('登録日'); 
+  const registrationDateIndex = headers.indexOf('登録日');
+  // ★ 追加: 削除フラグの列インデックス取得
+  const deleteFlagIndex = headers.indexOf('削除フラグ'); 
+  
   // 団体名がある場合はここに追加 (headers.indexOf('団体名'))
 
   // 重複チェック用データ
@@ -40,7 +43,6 @@ function getOrCreateCustomerId(extractedData, reservationSource) {
         if (data[i][familyNameKanjiIndex] === incomingFamilyName && 
             data[i][phoneIndex] === incomingPhone) {
           Logger.log('既存顧客IDを検出 (楽天/2項目): ' + data[i][customerIdIndex]);
-          // ★ ID前後の空白を削除して返す
           return String(data[i][customerIdIndex]).trim();
         }
       }
@@ -55,7 +57,6 @@ function getOrCreateCustomerId(extractedData, reservationSource) {
             data[i][phoneIndex] === incomingPhone && 
             data[i][emailIndex] === incomingEmail) {
           Logger.log('既存顧客IDを検出 (フォーム/3項目): ' + data[i][customerIdIndex]);
-          // ★ ID前後の空白を削除して返す
           return String(data[i][customerIdIndex]).trim();
         }
       }
@@ -81,8 +82,13 @@ function getOrCreateCustomerId(extractedData, reservationSource) {
   if (phoneIndex !== -1 && extractedData.電話番号) newRow[phoneIndex] = extractedData.電話番号;
   if (registrationDateIndex !== -1) newRow[registrationDateIndex] = currentTimestamp;
 
+  // ★ 追加: 削除フラグにFALSEを設定 (論理削除対応)
+  if (deleteFlagIndex !== -1) {
+    newRow[deleteFlagIndex] = false; 
+  }
+
   customerSheet.appendRow(newRow);
-  SpreadsheetApp.flush(); // ★ 即時書き込みを強制 (エラー防止)
+  SpreadsheetApp.flush(); // 即時書き込みを強制
   return newCustomerId.trim();
 }
 
@@ -116,7 +122,6 @@ function createNewReservationRow(headers, extractedData, reservationSource) {
   newRow[headers.indexOf('子ども人数')] = extractedData.children || '';
   
   // ★ 追加: 幼児人数の書き込み
-  // (列名がスプレッドシートと一致しているか確認してください)
   const toddlerMealIndex = headers.indexOf('幼児_食事あり');
   if (toddlerMealIndex !== -1) {
     newRow[toddlerMealIndex] = extractedData.toddler_meal || '';
@@ -129,7 +134,6 @@ function createNewReservationRow(headers, extractedData, reservationSource) {
   newRow[headers.indexOf('宿泊人数')] = extractedData.宿泊人数_RAW || ''; 
   
   // デフォルト値設定 (メール送信済フラグ)
-  // ★ 全員 FALSE でスタート (AppSheetのAutomationを起動させるため)
   if (headers.indexOf('メール送信済') !== -1) {
     newRow[headers.indexOf('メール送信済')] = false; 
   }
@@ -149,8 +153,7 @@ function createNewReservationRow(headers, extractedData, reservationSource) {
     newRow[headers.indexOf('楽天部屋タイプ')] = extractedData.楽天部屋タイプ;
   } 
   
-  // ★ 修正: 予約詳細への書き込み (楽天も含む)
-  // 以前はフォームのみでしたが、楽天のプラン名などもここに入れるため条件を緩和
+  // 予約詳細への書き込み (楽天も含む)
   if (headers.indexOf('予約詳細') !== -1 && extractedData.予約詳細) {
     newRow[headers.indexOf('予約詳細')] = extractedData.予約詳細;
   }
@@ -159,15 +162,14 @@ function createNewReservationRow(headers, extractedData, reservationSource) {
   const planIndex = headers.indexOf('プラン'); 
   if (planIndex !== -1) {
     if (reservationSource.route === '楽天トラベル') {
-      newRow[planIndex] = extractedData.楽天宿泊プラン || ''; // EmailTrigger側で自動判定したもの
+      newRow[planIndex] = extractedData.楽天宿泊プラン || ''; 
     } else if (reservationSource.route === 'フォーム') {
       newRow[planIndex] = extractedData.HP食事プラン || '';
     }
   }
 
-  // ★ 追加: 夕食不要フラグの書き込み
+  // 夕食不要フラグの書き込み
   if (headers.indexOf('夕食不要') !== -1) {
-    // 楽天の場合は自動判定結果を使用
     if (reservationSource.route === '楽天トラベル' && extractedData.noDinner !== '') {
       newRow[headers.indexOf('夕食不要')] = extractedData.noDinner;
     }
@@ -195,7 +197,6 @@ function deleteOccupancyRecords(reservationId) {
   
   if (refIdIndex === -1) return;
 
-  // 後ろからループして削除 (行ズレ防止)
   for (let i = data.length - 1; i >= 1; i--) {
     if (String(data[i][refIdIndex]).trim() === String(reservationId).trim()) {
       sheet.deleteRow(i + 1); 
