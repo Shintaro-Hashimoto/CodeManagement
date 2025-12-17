@@ -2,7 +2,7 @@
 /**
  * Template Name: サウナカレンダーページ
  * Description: Google Sheetsから取得したサウナ在庫状況を表示するカレンダー
-*/
+ */
 
 $inventoryKey = 'sauna'; 
 
@@ -12,32 +12,42 @@ get_header();
 // 1. キャッシュデータの読み込み関数
 // ==========================================================
 function get_cached_inventory() {
-	$cached_data = get_option( 'cached_inventory_status' );
-	if ( $cached_data ) {
-		return json_decode( $cached_data, true ); 
-	}
-	return [];
+    $cached_data = get_option( 'cached_inventory_status' );
+    if ( $cached_data ) {
+        return json_decode( $cached_data, true ); 
+    }
+    return [];
 }
 
-// 制限日を取得する関数 (自動6ヶ月更新版)
+// 制限日を取得する関数
 function get_limit_date($key) {
-	$cached_settings = get_option( 'cached_calendar_settings' );
-	
-	if ( $cached_settings ) {
-		$settings = json_decode( $cached_settings, true );
-		if (isset($settings[$key])) {
-			// ★ どんな形式で来ても yyyy/mm/dd に変換して返す
-			return date('Y/m/d', strtotime($settings[$key]));
-		}
-	}
+    $cached_settings = get_option( 'cached_calendar_settings' );
+    
+    if ( $cached_settings ) {
+        $settings = json_decode( $cached_settings, true );
+        if (isset($settings[$key])) {
+            return date('Y/m/d', strtotime($settings[$key]));
+        }
+    }
 
-	return date('Y/m/d', strtotime('+6 months'));
+    return date('Y/m/d', strtotime('+6 months'));
 }
 
 $inventory = get_cached_inventory();
 $js_inventory = !empty($inventory) ? json_encode($inventory) : '{}'; 
 $limitEndDate = get_limit_date($inventoryKey);
 ?>
+
+<style>
+    /* 前月・翌月の日付 */
+    .other-month {
+        background-color: #fcfcfc; /* かなり薄いグレー */
+        color: #ccc;
+    }
+    .other-month .calendar-price {
+        color: #ddd;
+    }
+</style>
 
 <div class="order-form-wrapper">
     <div class="order-form-container">
@@ -65,145 +75,176 @@ $limitEndDate = get_limit_date($inventoryKey);
 </div>
 
 <script>
-	const inventoryKey = '<?php echo $inventoryKey; ?>'; 
-	const INVENTORY_STATUS = <?php echo $js_inventory; ?>;
-	const VIEW_LIMIT_END_DATE_STRING = '<?php echo $limitEndDate; ?>';
+    const inventoryKey = '<?php echo $inventoryKey; ?>'; 
+    const INVENTORY_STATUS = <?php echo $js_inventory; ?>;
+    const VIEW_LIMIT_END_DATE_STRING = '<?php echo $limitEndDate; ?>';
 
-	const TODAY = new Date();
-	TODAY.setHours(0, 0, 0, 0); 
-	
-	let currentMonth = TODAY.getMonth();
-	let currentYear = TODAY.getFullYear();
-	
-	const DAYS_CONTAINER = document.getElementById('calendar-grid'); 
-	const MONTH_YEAR_HEADER = document.getElementById('current-month-year');
-	const PREV_BUTTON = document.getElementById('prev-month');
-	const NEXT_BUTTON = document.getElementById('next-month');
+    const TODAY = new Date();
+    TODAY.setHours(0, 0, 0, 0); 
+    
+    let currentMonth = TODAY.getMonth();
+    let currentYear = TODAY.getFullYear();
+    
+    const DAYS_CONTAINER = document.getElementById('calendar-grid'); 
+    const MONTH_YEAR_HEADER = document.getElementById('current-month-year');
+    const PREV_BUTTON = document.getElementById('prev-month');
+    const NEXT_BUTTON = document.getElementById('next-month');
 
-	const bookingDateInput = document.querySelector('input[name="booking-date"]');
-	
-	let selectedSaunaDate = null;
+    const bookingDateInput = document.querySelector('input[name="booking-date"]');
+    
+    let selectedSaunaDate = null;
 
-	function renderCalendar() {
-		let dayHeaders = DAYS_CONTAINER.querySelectorAll('.day-header');
-		for (let i = DAYS_CONTAINER.children.length - 1; i >= dayHeaders.length; i--) {
-			DAYS_CONTAINER.removeChild(DAYS_CONTAINER.children[i]);
-		}
-		
-		const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-		const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
-		const startDayOfWeek = firstDayOfMonth.getDay(); 
-		const daysInMonth = lastDayOfMonth.getDate();
-		
-		MONTH_YEAR_HEADER.textContent = `${currentYear}年 ${currentMonth + 1}月`;
-		
-		const firstDayOfCurrentMonth = new Date(currentYear, currentMonth, 1);
-		PREV_BUTTON.disabled = firstDayOfCurrentMonth.getTime() <= TODAY.getTime();
-		
-		const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-		const nextMonth = currentMonth === 11 ? 1 : currentMonth + 2;
-		const nextMonthString = `${nextMonthYear}/${String(nextMonth).padStart(2, '0')}/01`;
-		
-		NEXT_BUTTON.disabled = nextMonthString > VIEW_LIMIT_END_DATE_STRING;
+    // 日付フォーマットヘルパー (yyyy/mm/dd)
+    function formatDateStr(dateObj) {
+        return `${dateObj.getFullYear()}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+    }
 
-		for (let i = 0; i < startDayOfWeek; i++) {
-			DAYS_CONTAINER.innerHTML += '<div class="calendar-day empty-day"></div>';
-		}
+    function renderCalendar() {
+        // 既存の日付セルをクリア（ヘッダー以外）
+        let dayHeaders = DAYS_CONTAINER.querySelectorAll('.day-header');
+        while (DAYS_CONTAINER.children.length > dayHeaders.length) {
+            DAYS_CONTAINER.removeChild(DAYS_CONTAINER.lastChild);
+        }
+        
+        MONTH_YEAR_HEADER.textContent = `${currentYear}年 ${currentMonth + 1}月`;
+        
+        // 前月ボタン制御
+        const firstDayOfCurrentMonth = new Date(currentYear, currentMonth, 1);
+        PREV_BUTTON.disabled = firstDayOfCurrentMonth.getTime() <= TODAY.getTime();
+        
+        // 翌月ボタン制御
+        const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+        const nextMonth = currentMonth === 11 ? 1 : currentMonth + 2;
+        const nextMonthString = `${nextMonthYear}/${String(nextMonth).padStart(2, '0')}/01`;
+        NEXT_BUTTON.disabled = nextMonthString > VIEW_LIMIT_END_DATE_STRING;
 
-		for (let day = 1; day <= daysInMonth; day++) {
-			const date = new Date(currentYear, currentMonth, day);
-			date.setHours(0, 0, 0, 0); 
-			
-			const dateString = `${currentYear}/${String(currentMonth + 1).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
-			
-			if (dateString > VIEW_LIMIT_END_DATE_STRING) {
-				DAYS_CONTAINER.innerHTML += '<div class="calendar-day empty-day"></div>'; 
-				continue; 
-			}
+        // --- 日付セルの生成ヘルパー ---
+        const createDayCell = (dateObj, isCurrentMonth) => {
+            dateObj.setHours(0,0,0,0);
+            const dateString = formatDateStr(dateObj);
+            const time = dateObj.getTime();
 
-			const statusData = INVENTORY_STATUS[dateString];
-			const currentStatus = statusData ? statusData[inventoryKey] : ''; 
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            dayElement.setAttribute('data-date', dateString);
 
-			const dayElement = document.createElement('div');
-			dayElement.className = 'calendar-day';
-			dayElement.setAttribute('data-date', dateString);
-			dayElement.innerHTML = `<span class="day-number">${day}</span>`;
-			
-			if (selectedSaunaDate && dateString === selectedSaunaDate) {
-				dayElement.classList.add('selected-from'); 
-			}
+            if (!isCurrentMonth) {
+                dayElement.classList.add('other-month');
+            }
 
-			if (date.getTime() < TODAY.getTime()) {
-				dayElement.classList.add('empty-day', 'past-day');
-				dayElement.innerHTML += `<span class="status-placeholder">-</span>`;
-			} else if (date.getTime() > TODAY.getTime()) {
-				if (currentStatus) {
-					dayElement.innerHTML += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
-				} else {
-					dayElement.innerHTML += `<span class="status status-none">?</span>`;
-				}
-			} else {
-				// 当日
-				if (currentStatus === '✕' || currentStatus === 'ー') {
-					dayElement.innerHTML += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
-				} else {
-					dayElement.innerHTML += `<span class="status status-tel">Tel </span>`; 
-				}
-			}
-			
-			if (currentStatus === '✕') {
-				dayElement.classList.add('is-fully-booked');
-			}
-			
-			DAYS_CONTAINER.appendChild(dayElement); 
-		}
-	}
-	
-	document.getElementById('prev-month').addEventListener('click', () => {
-		currentMonth--;
-		if (currentMonth < 0) {
-			currentMonth = 11;
-			currentYear--;
-		}
-		renderCalendar();
-	});
+            if (dateString > VIEW_LIMIT_END_DATE_STRING) {
+                dayElement.classList.add('empty-day');
+                return dayElement;
+            }
 
-	document.getElementById('next-month').addEventListener('click', () => {
-		currentMonth++;
-		if (currentMonth > 11) {
-			currentMonth = 0;
-			currentYear++;
-		}
-		renderCalendar();
-	});
+            const statusData = INVENTORY_STATUS[dateString];
+            const currentStatus = statusData ? statusData[inventoryKey] : ''; 
 
-	renderCalendar();
+            let cellContent = `<span class="day-number">${dateObj.getDate()}</span>`;
+            
+            // 選択状態の表示
+            if (selectedSaunaDate && dateString === selectedSaunaDate) {
+                dayElement.classList.add('selected-from'); 
+            }
 
-	DAYS_CONTAINER.addEventListener('click', function(event) {
-		const targetDay = event.target.closest('.calendar-day');
+            if (time < TODAY.getTime()) {
+                dayElement.classList.add('empty-day', 'past-day');
+                cellContent += `<span class="status-placeholder">-</span>`;
+            } else if (time > TODAY.getTime()) {
+                if (currentStatus) {
+                    cellContent += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
+                } else {
+                    cellContent += `<span class="status status-none">?</span>`;
+                }
+            } else {
+                // 当日
+                if (currentStatus === '✕' || currentStatus === 'ー') {
+                    cellContent += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
+                } else {
+                    cellContent += `<span class="status status-tel">Tel </span>`; 
+                }
+            }
+            
+            if (currentStatus === '✕') {
+                dayElement.classList.add('is-fully-booked');
+            }
+            
+            dayElement.innerHTML = cellContent;
+            return dayElement;
+        };
 
-		if (!targetDay || 
-			targetDay.classList.contains('empty-day') || 
-			targetDay.classList.contains('past-day') ||
-			targetDay.querySelector('.status-✕') || 
-			targetDay.querySelector('.status-ー') || 
-			targetDay.querySelector('.status-tel') ) { 
-			return; 
-		}
-		
-		const dateSlash = targetDay.getAttribute('data-date'); 
-		const dateHyphen = dateSlash.replace(/\//g, '-');
+        // 1. 前月分の日付を描画
+        const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+        const startDayOfWeek = firstDayOfMonth.getDay(); // 0(Sun) - 6(Sat)
+        
+        for (let i = startDayOfWeek - 1; i >= 0; i--) {
+            const d = new Date(currentYear, currentMonth, 0 - i);
+            DAYS_CONTAINER.appendChild(createDayCell(d, false));
+        }
 
-		selectedSaunaDate = dateSlash;
+        // 2. 当月分の日付を描画
+        const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+        const daysInMonth = lastDayOfMonth.getDate();
 
-		if (bookingDateInput) {
-			bookingDateInput.value = dateHyphen;
-			
-			bookingDateInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-		}
-		
-		renderCalendar();
-	});
+        for (let day = 1; day <= daysInMonth; day++) {
+            const d = new Date(currentYear, currentMonth, day);
+            DAYS_CONTAINER.appendChild(createDayCell(d, true));
+        }
+
+        // 3. 翌月分の日付を描画（週の残りを埋める）
+        const endDayOfWeek = lastDayOfMonth.getDay(); // 0(Sun) - 6(Sat)
+        if (endDayOfWeek < 6) {
+            for (let j = 1; j <= (6 - endDayOfWeek); j++) {
+                const d = new Date(currentYear, currentMonth + 1, j);
+                DAYS_CONTAINER.appendChild(createDayCell(d, false));
+            }
+        }
+    }
+    
+    document.getElementById('prev-month').addEventListener('click', () => {
+        currentMonth--;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+        renderCalendar();
+    });
+
+    document.getElementById('next-month').addEventListener('click', () => {
+        currentMonth++;
+        if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        }
+        renderCalendar();
+    });
+
+    renderCalendar();
+
+    DAYS_CONTAINER.addEventListener('click', function(event) {
+        const targetDay = event.target.closest('.calendar-day');
+
+        if (!targetDay || 
+            targetDay.classList.contains('empty-day') || 
+            targetDay.classList.contains('past-day') ||
+            targetDay.querySelector('.status-✕') || 
+            targetDay.querySelector('.status-ー') || 
+            targetDay.querySelector('.status-tel') ) { 
+            return; 
+        }
+        
+        const dateSlash = targetDay.getAttribute('data-date'); 
+        const dateHyphen = dateSlash.replace(/\//g, '-');
+
+        selectedSaunaDate = dateSlash;
+
+        if (bookingDateInput) {
+            bookingDateInput.value = dateHyphen;
+            bookingDateInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        renderCalendar();
+    });
 </script>
 
 <?php get_footer(); ?>
