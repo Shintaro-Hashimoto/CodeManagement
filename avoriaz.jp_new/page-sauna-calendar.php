@@ -44,9 +44,6 @@ $limitEndDate = get_limit_date($inventoryKey);
         background-color: #fcfcfc; /* かなり薄いグレー */
         color: #ccc;
     }
-    .other-month .calendar-price {
-        color: #ddd;
-    }
 </style>
 
 <div class="order-form-wrapper">

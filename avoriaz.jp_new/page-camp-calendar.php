@@ -56,19 +56,8 @@ $limitEndDate = get_limit_date($inventoryKey);
     
     /* 選択不可エリア内の要素を全体的に薄くする */
     .disabled-date .day-number,
-    .disabled-date .status,
-    .disabled-date .calendar-price {
+    .disabled-date .status {
         opacity: 0.4; /* 全体の透明度を下げて存在感を薄くする */
-    }
-
-    /* 料金表示の調整 */
-    .calendar-price {
-        display: block; 
-        font-size: 0.8rem; 
-        color: #555;
-    }
-    .other-month .calendar-price {
-        color: #ddd;
     }
 </style>
 
@@ -186,7 +175,7 @@ $limitEndDate = get_limit_date($inventoryKey);
 
             const statusData = INVENTORY_STATUS[dateString];
             const currentStatus = statusData ? statusData[inventoryKey] : ''; 
-            const price = statusData ? statusData['price'] : '';
+            // priceの取得コードは削除または無視
 
             let cellContent = `<span class="day-number">${dateObj.getDate()}</span>`;
 
@@ -207,11 +196,7 @@ $limitEndDate = get_limit_date($inventoryKey);
             } else if (time > TODAY.getTime()) {
                 if (currentStatus) {
                     cellContent += `<span class="status status-${inventoryKey} status-${currentStatus}">${currentStatus}</span>`;
-                    // キャンプの場合も料金表示があれば出す（なければ出ない）
-                    if (price && price > 0 && currentStatus !== '✕' && currentStatus !== 'ー') {
-                        const formattedPrice = Number(price).toLocaleString();
-                        cellContent += `<span class="calendar-price">¥${formattedPrice}~</span>`;
-                    }
+                    // 料金表示ロジックを削除しました
                 } else {
                     cellContent += `<span class="status status-none">?</span>`;
                 }

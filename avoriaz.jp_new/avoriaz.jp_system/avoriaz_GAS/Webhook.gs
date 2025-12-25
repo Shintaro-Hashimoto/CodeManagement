@@ -1,10 +1,10 @@
 // ==========================================================
-// Webhook.gs - フォーム受信 & Square決済通知 (doPost)
+// Webhook.gs - フォーム受信 & Square決済通知 (doPost) 【修正版】
 // ==========================================================
 
-// ★ Square Signature Key (先ほど取得したキー)
+// ★ Square Signature Key
 const SQUARE_SIGNATURE_KEY = '_vPAnA9vGB9lQ8kOy0m7kw';
-const NOTIFICATION_URL = ScriptApp.getService().getUrl(); // 現在のスクリプトURL
+const NOTIFICATION_URL = ScriptApp.getService().getUrl(); 
 
 function doPost(e) {
   try {
@@ -18,6 +18,9 @@ function doPost(e) {
     // ----------------------------------------------------
     // 2. 既存のHPフォーム/キャンセル処理 (JSONパース)
     // ----------------------------------------------------
+    if (!e.postData || !e.postData.contents) {
+      return ContentService.createTextOutput("No Data");
+    }
     const jsonData = JSON.parse(e.postData.contents);
     
     // 分岐: キャンセル処理
@@ -34,6 +37,14 @@ function doPost(e) {
     const extractedData = parseWebhookData(jsonData);
     const reservationSource = identifySourceFromWebhook(jsonData);
     
+    // ★★★ 修正箇所: 判定不能（食事プランなし）の救済措置 ★★★
+    // PHP側からmeal-planが送られず判定できない場合、強制的に「宿泊」とする
+    if (!reservationSource.service) {
+       Logger.log('サービス種別が判定できないため、「宿泊」として処理します');
+       reservationSource.service = '宿泊';
+    }
+    
+    // データ不備のチェック
     if (!extractedData || !reservationSource.service) {
       return ContentService.createTextOutput(JSON.stringify({status: 'error', message: 'Invalid Data'}));
     }
@@ -42,6 +53,7 @@ function doPost(e) {
     const sheet = ss.getSheetByName(SHEET_NAME_RESERVATION);
     const headers = sheet.getDataRange().getValues()[0];
     
+    // Utils.gsの関数を使用して行を作成
     const newRow = createNewReservationRow(headers, extractedData, reservationSource);
     
     if (newRow.length > 0) {
@@ -69,17 +81,15 @@ function handleSquarePayment(e) {
   const signature = e.requestHeaders['x-square-hmac-sha256'];
   const body = e.postData.contents;
   
-  // 署名検証 (セキュリティ対策: 正しいキーでハッシュ化して一致するか確認)
-  // ※検証失敗でも一旦ログに残して200を返す(リトライ防止)のが一般的ですが、ここでは簡易実装
+  // 署名検証
   if (!validateSquareSignature(body, signature)) {
     Logger.log('Square Signature Verification Failed');
-    // セキュリティ上はエラーだが、Square側の再送ループを防ぐため200を返すこともある
     return ContentService.createTextOutput('Signature Mismatch').setMimeType(ContentService.MimeType.TEXT); 
   }
 
   const json = JSON.parse(body);
   
-  // テスト通知(webhook.subscription.created)などはスキップ
+  // テスト通知などはスキップ
   if (json.type !== 'payment.updated') {
     return ContentService.createTextOutput('Event Ignored').setMimeType(ContentService.MimeType.TEXT);
   }
@@ -87,11 +97,11 @@ function handleSquarePayment(e) {
   const paymentObj = json.data.object.payment;
   const paymentId = paymentObj.id;
   const status = paymentObj.status;
-  const amount = paymentObj.amount_money.amount; // 日本円の場合、整数(100円=100)
+  const amount = paymentObj.amount_money.amount; 
   const currency = paymentObj.amount_money.currency;
-  const note = paymentObj.note || ''; // ここに予約ID(Gxxxxxxx)が入る想定
+  const note = paymentObj.note || ''; 
   
-  // 予約IDの抽出 (メモ欄から "G" で始まる7桁以上の英数字を探す)
+  // 予約IDの抽出
   const reservationIdMatch = note.match(/(G[a-zA-Z0-9]{7})/);
   const reservationId = reservationIdMatch ? reservationIdMatch[1] : '';
 
@@ -102,8 +112,6 @@ function handleSquarePayment(e) {
 }
 
 function validateSquareSignature(body, signature) {
-  // Squareの署名検証ロジック (HMAC-SHA256)
-  // Webhook URL + Body をキーでハッシュ化
   const payload = NOTIFICATION_URL + body;
   const rawSignature = Utilities.computeHmacSha256Signature(payload, SQUARE_SIGNATURE_KEY);
   const computedSignature = Utilities.base64Encode(rawSignature);
@@ -112,39 +120,37 @@ function validateSquareSignature(body, signature) {
 
 function savePaymentToSheet(paymentId, reservationId, amount, currency, status, note, rawData) {
   const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
-  const sheet = ss.getSheetByName('15_Payments'); // 新しいシート
+  const sheet = ss.getSheetByName('15_Payments'); 
   
   if (!sheet) {
     Logger.log('Error: 15_Payments Sheet not found');
     return;
   }
   
-  // 重複チェック (PaymentIDが既に存在するか)
+  // 重複チェック
   const data = sheet.getDataRange().getValues();
-  // ヘッダー行のみの場合はスキップ
   if (data.length > 1) {
-    const squareIdIndex = 7; // H列 (0始まりで7番目)
+    const squareIdIndex = 7; 
     for (let i = 1; i < data.length; i++) {
       if (data[i][squareIdIndex] === paymentId) {
         Logger.log('Duplicate Payment Notification: ' + paymentId);
-        // ステータス更新が必要な場合はここでUPDATE処理を入れるが、今回はスキップ
         return; 
       }
     }
   }
 
   const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy/MM/dd HH:mm:ss');
-  const appSheetId = 'PAY_' + Utilities.getUuid().substring(0, 8); // AppSheet用の一意キー
+  const appSheetId = 'PAY_' + Utilities.getUuid().substring(0, 8); 
 
   sheet.appendRow([
-    appSheetId,    // PaymentID (AppSheet用)
+    appSheetId,    // PaymentID
     timestamp,     // 日時
     reservationId, // 予約ID (Ref)
     amount,        // 金額
     currency,      // 通貨
     status,        // ステータス
     note,          // メモ
-    paymentId,     // SquareID (重複チェック用)
+    paymentId,     // SquareID
     rawData        // RawData
   ]);
   
@@ -388,6 +394,7 @@ function parseWebhookData(data) {
        result.チェックイン日 = dateStr;
      }
   } else {
+     // ★ PHPから来るハイフン日付をここでスラッシュに変換
      result.チェックイン日 = (String(data['checkin-date']) || '').replace(/-/g, '/');
      result.チェックアウト日 = (String(data['checkout-date']) || '').replace(/-/g, '/');
      

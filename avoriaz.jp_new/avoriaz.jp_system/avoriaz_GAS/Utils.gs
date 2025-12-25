@@ -1,5 +1,5 @@
 // ==========================================================
-// Utils.gs - 共通関数 (DB操作・ログ保存)
+// Utils.gs - 共通関数 (DB操作・ログ保存) 【フラグ判定追加版】
 // ==========================================================
 
 // --- 顧客情報の検索と作成を行う関数 ---
@@ -114,7 +114,11 @@ function createNewReservationRow(headers, extractedData, reservationSource) {
   // 日付・時間
   newRow[headers.indexOf('チェックイン日')] = extractedData.チェックイン日 || ''; 
   newRow[headers.indexOf('チェックアウト日')] = extractedData.チェックアウト日 || '';
-  newRow[headers.indexOf('チェックイン時刻')] = extractedData.チェックイン時刻 || '';
+
+  // ★ 修正: チェックイン時刻を変数に確保（夕食判定用）
+  const checkInTime = extractedData.チェックイン時刻 || '';
+  newRow[headers.indexOf('チェックイン時刻')] = checkInTime;
+
   newRow[headers.indexOf('チェックアウト時刻')] = extractedData.チェックアウト時刻 || ''; 
   
   // 人数 (★幼児対応)
@@ -138,6 +142,11 @@ function createNewReservationRow(headers, extractedData, reservationSource) {
     newRow[headers.indexOf('メール送信済')] = false; 
   }
 
+  // ★ 追加: メール送信しないフラグ (デフォルトFALSE)
+  if (headers.indexOf('メール送信しない') !== -1) {
+    newRow[headers.indexOf('メール送信しない')] = false; 
+  }
+
   // 申込種別の補完
   if (reservationSource.route === '楽天トラベル') {
     newRow[headers.indexOf('申込種別')] = '宿泊'; 
@@ -158,21 +167,38 @@ function createNewReservationRow(headers, extractedData, reservationSource) {
     newRow[headers.indexOf('予約詳細')] = extractedData.予約詳細;
   }
 
-  // プラン情報 (J列)
+  // プラン情報 (J列) - ★ 修正: プラン名を変数に確保（夕食判定用）
   const planIndex = headers.indexOf('プラン'); 
+  let planName = ''; // 変数定義
   if (planIndex !== -1) {
     if (reservationSource.route === '楽天トラベル') {
-      newRow[planIndex] = extractedData.楽天宿泊プラン || ''; 
+      planName = extractedData.楽天宿泊プラン || ''; 
     } else if (reservationSource.route === 'フォーム') {
-      newRow[planIndex] = extractedData.HP食事プラン || '';
+      planName = extractedData.HP食事プラン || '';
     }
+    newRow[planIndex] = planName;
   }
 
-  // 夕食不要フラグの書き込み
+  // ★ 修正: 夕食不要フラグの自動判定
   if (headers.indexOf('夕食不要') !== -1) {
-    if (reservationSource.route === '楽天トラベル' && extractedData.noDinner !== '') {
-      newRow[headers.indexOf('夕食不要')] = extractedData.noDinner;
+    let isNoDinner = false;
+
+    // 1. 時間判定 (18:00:00以降ならTRUE)
+    if (checkInTime >= '18:00:00') {
+      isNoDinner = true;
     }
+
+    // 2. プラン判定 (朝食のみの場合TRUE)
+    if (planName.includes('朝食') && !planName.includes('2食')) {
+      isNoDinner = true;
+    }
+    
+    // 3. 楽天データの優先
+    if (reservationSource.route === '楽天トラベル' && extractedData.noDinner !== undefined && extractedData.noDinner !== '') {
+      isNoDinner = extractedData.noDinner;
+    }
+
+    newRow[headers.indexOf('夕食不要')] = isNoDinner;
   }
   
   // 配列生成
